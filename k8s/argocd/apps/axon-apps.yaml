@@ -1,0 +1,62 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: axon-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/janvis11/axon
+    targetRevision: main
+    path: k8s/apps/api
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apps
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: axon-worker
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/janvis11/axon
+    targetRevision: main
+    path: k8s/apps/worker
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apps
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: axon-frontend
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/janvis11/axon
+    targetRevision: main
+    path: k8s/apps/frontend
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apps
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
