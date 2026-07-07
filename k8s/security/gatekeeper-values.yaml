@@ -1,0 +1,69 @@
+# gatekeeper-values.yaml — OPA Gatekeeper Helm chart values
+# Chart: gatekeeper/gatekeeper
+# Usage: helm install gatekeeper gatekeeper/gatekeeper -n security -f k8s/security/gatekeeper-values.yaml
+
+replicas: 1
+
+# Audit configuration — how often Gatekeeper re-evaluates existing resources
+auditInterval: 60
+constraintViolationsLimit: 20
+auditFromCache: false
+auditChunkSize: 500
+
+# Resources
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Webhook configuration
+webhook:
+  # FailurePolicy: Ignore in dev so bad config doesn't lock out cluster
+  # Change to Fail in production
+  failurePolicy: Ignore
+  namespaceSelector:
+    matchExpressions:
+      - key: admission.gatekeeper.sh/ignore
+        operator: DoesNotExist
+
+# Exempt system namespaces from admission control
+exemptNamespaces:
+  - kube-system
+  - kube-public
+  - kube-node-lease
+  - argocd
+  - security
+
+# Audit exemptions (same namespaces)
+exemptNamespacePrefixes: []
+
+# Enable metrics for Prometheus scraping
+metricsPort: 8888
+healthPort: 9090
+
+# Controller manager settings
+controllerManager:
+  exemptNamespaces:
+    - kube-system
+    - kube-public
+    - security
+    - argocd
+
+# Mutations (disabled by default)
+mutations:
+  enable: false
+  enablePodAssignMutation: false
+
+# Pod Security
+podSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsGroup: 999
+  runAsNonRoot: true
+  runAsUser: 1000

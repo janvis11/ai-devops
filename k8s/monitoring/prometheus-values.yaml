@@ -1,0 +1,117 @@
+# k8s/monitoring/prometheus-values.yaml — kube-prometheus-stack Helm values
+# Configures Prometheus, Grafana, and Alertmanager.
+
+# ─── Prometheus ───────────────────────────────────────────────────────────────
+prometheus:
+  prometheusSpec:
+    retention: 30d
+    retentionSize: "10GB"
+    
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+
+    # Scrape all pods with prometheus.io/scrape=true annotation
+    podMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+    # Add Alertmanager webhook for AXON agent
+    alertingEndpoints:
+      - name: axon-alertmanager
+        namespace: monitoring
+        port: 9093
+
+# ─── Alertmanager ─────────────────────────────────────────────────────────────
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+
+    route:
+      group_by: ["alertname", "namespace", "pod"]
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 1h
+      receiver: axon-webhook
+
+      routes:
+        - match:
+            severity: critical
+          receiver: axon-webhook
+          continue: true
+        - match:
+            severity: warning
+          receiver: axon-webhook
+
+    receivers:
+      - name: axon-webhook
+        webhook_configs:
+          - url: "http://axon-agent.axon-system.svc.cluster.local:8000/webhook/alertmanager"
+            send_resolved: true
+            max_alerts: 50
+
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+# ─── Grafana ──────────────────────────────────────────────────────────────────
+grafana:
+  enabled: true
+  adminPassword: "axon-grafana-admin"  # Change in production
+
+  service:
+    type: NodePort
+    nodePort: 30300
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Pre-configured datasources
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki-gateway.monitoring.svc.cluster.local:80
+      access: proxy
+      isDefault: false
+
+    - name: Jaeger
+      type: jaeger
+      url: http://jaeger-query.monitoring.svc.cluster.local:16686
+      access: proxy
+
+  # Pre-configure dashboards via ConfigMap
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_dashboard
+
+  grafana.ini:
+    server:
+      root_url: "http://localhost:30300"
+    analytics:
+      reporting_enabled: false
+    feature_toggles:
+      enable: publicDashboards
+
+# ─── Node Exporter ────────────────────────────────────────────────────────────
+nodeExporter:
+  enabled: true
+
+# ─── kube-state-metrics ───────────────────────────────────────────────────────
+kubeStateMetrics:
+  enabled: true

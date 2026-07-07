@@ -1,0 +1,123 @@
+---
+# k8s/security/rbac/axon-agent-rbac.yaml
+# RBAC resources for the AXON agent service account.
+# Grants the agent least-privilege access to pods, deployments, events, and HPAs.
+
+# ─── ServiceAccount ───────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: axon-agent
+  namespace: axon-system
+  labels:
+    app.kubernetes.io/name: axon-agent
+    app.kubernetes.io/component: rbac
+  annotations:
+    # Vault agent injector will use this SA for auth
+    vault.hashicorp.com/agent-inject: "true"
+    vault.hashicorp.com/role: "axon-agent"
+
+---
+# ─── ClusterRole ──────────────────────────────────────────────────────────────
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: axon-agent
+  labels:
+    app.kubernetes.io/name: axon-agent
+    app.kubernetes.io/component: rbac
+rules:
+  # Pod operations — view, log fetch, delete (remediation)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "delete"]
+
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]   # For chaos injection
+
+  # Events — read-only for diagnosis
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+
+  # Nodes — read-only for cluster health
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+
+  # Namespaces — read-only
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+
+  # Services and Endpoints — for service discovery
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+
+  # ConfigMaps — for reading app configs during diagnosis
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+
+  # Deployments — get/watch/patch (scale, rolling restart)
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+
+  - apiGroups: ["apps"]
+    resources: ["deployments/status"]
+    verbs: ["get"]
+
+  # ReplicaSets — for rollout tracking
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+
+  # StatefulSets — for stateful workload remediation
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+
+  # DaemonSets — read-only
+  - apiGroups: ["apps"]
+    resources: ["daemonsets"]
+    verbs: ["get", "list", "watch"]
+
+  # HPA — patch to scale out during high load
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+
+  # PodDisruptionBudgets — read for safe drain decisions
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch"]
+
+  # Metrics — for PromQL and resource usage queries
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list"]
+
+---
+# ─── ClusterRoleBinding ───────────────────────────────────────────────────────
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: axon-agent
+  labels:
+    app.kubernetes.io/name: axon-agent
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: axon-agent
+subjects:
+  - kind: ServiceAccount
+    name: axon-agent
+    namespace: axon-system

@@ -1,0 +1,79 @@
+---
+# k8s/security/opa/no-latest-tag-template.yaml
+# OPA Gatekeeper ConstraintTemplate — blocks containers using :latest image tag.
+# Ensures all images have a specific version pinned (e.g. sha or semver).
+
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8snolatesttag
+  annotations:
+    description: >
+      Prohibits container images with the :latest tag.
+      All images must use a specific version tag or image digest.
+    owner: axon-platform
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sNoLatestTag
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            exemptImages:
+              type: array
+              description: List of image prefixes exempt from this policy
+              items:
+                type: string
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8snolatesttag
+
+        import future.keywords.if
+        import future.keywords.in
+
+        # Collect all containers (init + regular)
+        all_containers[container] {
+          container := input.review.object.spec.template.spec.containers[_]
+        }
+
+        all_containers[container] {
+          container := input.review.object.spec.template.spec.initContainers[_]
+        }
+
+        # Check if image is exempt
+        is_exempt(image) if {
+          exempt := input.parameters.exemptImages[_]
+          startswith(image, exempt)
+        }
+
+        # Violation: image ends with :latest or has no tag at all
+        violation[{"msg": msg}] {
+          container := all_containers[_]
+          not is_exempt(container.image)
+          uses_latest(container.image)
+          msg := sprintf(
+            "Container '%v' uses image '%v' which has the :latest tag or no tag. Pin a specific version.",
+            [container.name, container.image]
+          )
+        }
+
+        # Helper: detect :latest or no tag
+        uses_latest(image) if {
+          endswith(image, ":latest")
+        }
+
+        uses_latest(image) if {
+          # No colon at all means implicit :latest
+          not contains(image, ":")
+        }
+
+        uses_latest(image) if {
+          # Has colon but after the last / — check the tag portion
+          parts := split(image, ":")
+          count(parts) == 2
+          parts[1] == "latest"
+        }

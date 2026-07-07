@@ -1,0 +1,122 @@
+---
+# k8s/security/networkpolicy/monitoring-netpol.yaml
+# NetworkPolicy for monitoring namespace.
+# Prometheus/Alertmanager/Grafana can scrape all pods, but only accept cluster-internal ingress.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-ingress
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector: {}
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Allow from within monitoring namespace (Grafana → Prometheus, etc.)
+    - from:
+        - podSelector: {}
+
+    # Allow from axon-system (agent reads Prometheus metrics)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: axon-system
+      ports:
+        - protocol: TCP
+          port: 9090   # Prometheus
+
+    # Allow from apps namespace (apps expose /metrics for scraping)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+
+    # Allow from gitops (ArgoCD metrics)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitops
+
+    # Grafana UI accessible from all (NodePort or ingress)
+    - ports:
+        - protocol: TCP
+          port: 3000
+
+  egress:
+    # Prometheus scrapes all namespaces
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8000   # FastAPI metrics
+        - protocol: TCP
+          port: 8080   # various
+        - protocol: TCP
+          port: 9091   # pushgateway
+
+    # Allow DNS
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # Allow HTTPS for Alertmanager external hooks
+    - ports:
+        - protocol: TCP
+          port: 443
+
+    # Allow to axon-system webhook receiver
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: axon-system
+      ports:
+        - protocol: TCP
+          port: 8000
+
+---
+# ─── Apps namespace — no egress to axon-system ───────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: apps-deny-axon-system-egress
+  namespace: apps
+  labels:
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector: {}
+
+  policyTypes:
+    - Egress
+
+  egress:
+    # Allow everything EXCEPT axon-system
+    - to:
+        - namespaceSelector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: NotIn
+                values:
+                  - axon-system
+      ports:
+        - protocol: TCP
+          port: 5432   # PostgreSQL
+        - protocol: TCP
+          port: 9092   # Kafka
+        - protocol: TCP
+          port: 443    # External HTTPS
+        - protocol: TCP
+          port: 80
+    # Allow DNS always
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

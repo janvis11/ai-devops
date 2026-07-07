@@ -1,0 +1,82 @@
+---
+# k8s/security/opa/require-resource-limits-template.yaml
+# OPA Gatekeeper ConstraintTemplate — requires all containers to have
+# explicit CPU and memory resource limits set.
+
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequireresourcelimits
+  annotations:
+    description: >
+      Requires all containers to have memory and CPU resource limits defined.
+      Prevents unbounded resource consumption in the cluster.
+    owner: axon-platform
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireResourceLimits
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            requireCPU:
+              type: boolean
+              description: Whether to require CPU limits (default true)
+            requireMemory:
+              type: boolean
+              description: Whether to require memory limits (default true)
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequireresourcelimits
+
+        import future.keywords.if
+        import future.keywords.in
+
+        # Collect all containers
+        all_containers[container] {
+          container := input.review.object.spec.template.spec.containers[_]
+        }
+
+        all_containers[container] {
+          container := input.review.object.spec.template.spec.initContainers[_]
+        }
+
+        # Default to requiring both
+        require_cpu    := object.get(input.parameters, "requireCPU", true)
+        require_memory := object.get(input.parameters, "requireMemory", true)
+
+        # Violation: missing memory limit
+        violation[{"msg": msg}] {
+          require_memory == true
+          container := all_containers[_]
+          not container.resources.limits.memory
+          msg := sprintf(
+            "Container '%v' has no memory limit set. Add resources.limits.memory.",
+            [container.name]
+          )
+        }
+
+        # Violation: missing CPU limit
+        violation[{"msg": msg}] {
+          require_cpu == true
+          container := all_containers[_]
+          not container.resources.limits.cpu
+          msg := sprintf(
+            "Container '%v' has no CPU limit set. Add resources.limits.cpu.",
+            [container.name]
+          )
+        }
+
+        # Violation: missing resource requests memory
+        violation[{"msg": msg}] {
+          container := all_containers[_]
+          not container.resources.requests.memory
+          msg := sprintf(
+            "Container '%v' has no memory request set. Add resources.requests.memory.",
+            [container.name]
+          )
+        }

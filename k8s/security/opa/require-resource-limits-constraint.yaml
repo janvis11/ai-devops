@@ -1,0 +1,26 @@
+---
+# k8s/security/opa/require-resource-limits-constraint.yaml
+# Applies the K8sRequireResourceLimits constraint to the apps namespace.
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireResourceLimits
+metadata:
+  name: require-resource-limits
+  annotations:
+    description: All containers in apps namespace must have CPU and memory limits
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds:
+          - Deployment
+          - StatefulSet
+          - DaemonSet
+    namespaces:
+      - apps
+
+  enforcementAction: deny
+
+  parameters:
+    requireCPU: true
+    requireMemory: true

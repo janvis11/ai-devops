@@ -1,0 +1,33 @@
+---
+# k8s/security/opa/protect-axon-system-constraint.yaml
+# Applies the K8sProtectNamespace constraint to axon-system.
+# Only users in system:masters can deploy to axon-system.
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sProtectNamespace
+metadata:
+  name: protect-axon-system
+  annotations:
+    description: Only cluster-admins can deploy to axon-system namespace
+spec:
+  match:
+    kinds:
+      - apiGroups: ["", "apps", "batch", "networking.k8s.io"]
+        kinds:
+          - Pod
+          - Deployment
+          - StatefulSet
+          - DaemonSet
+          - Job
+          - CronJob
+          - Ingress
+
+  enforcementAction: deny
+
+  parameters:
+    protectedNamespaces:
+      - axon-system
+    allowedGroups:
+      - system:masters
+      - system:cluster-admins
+      - argocd-application-controller  # ArgoCD needs to deploy here

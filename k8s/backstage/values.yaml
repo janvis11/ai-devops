@@ -1,0 +1,37 @@
+# k8s/backstage/values.yaml — Backstage Helm values (placeholder)
+# Chart: backstage/backstage
+# Full configuration will be added in Phase 7.
+
+backstage:
+  image:
+    registry: ghcr.io
+    repository: janvis11/axon/backstage
+    tag: latest
+
+  appConfig:
+    app:
+      title: AXON Developer Portal
+      baseUrl: http://localhost:7007
+
+    backend:
+      baseUrl: http://localhost:7007
+      listen:
+        port: 7007
+
+    catalog:
+      rules:
+        - allow: [Component, System, API, Resource, Location, Template]
+      locations:
+        - type: url
+          target: https://github.com/janvis11/axon/blob/main/services/api/catalog-info.yaml
+        - type: url
+          target: https://github.com/janvis11/axon/blob/main/services/worker/catalog-info.yaml
+        - type: url
+          target: https://github.com/janvis11/axon/blob/main/services/frontend/catalog-info.yaml
+
+service:
+  type: NodePort
+  ports:
+    backend: 7007
+  nodePorts:
+    backend: 30707

@@ -1,0 +1,122 @@
+# k8s/monitoring/fluentd-values.yaml — Fluentd Helm values
+# Chart: fluent/fluentd
+# Ships pod logs to Loki and Kafka topic infra.logs
+
+replicaCount: 1
+
+image:
+  repository: fluent/fluentd-kubernetes-daemonset
+  tag: "v1.16-debian-kafka-1"
+  pullPolicy: IfNotPresent
+
+kind: DaemonSet
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 200Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+tolerations:
+  - operator: Exists   # Run on all nodes including masters
+
+# Fluentd configuration
+fileConfigs:
+  01_sources.conf: |-
+    # Collect all pod logs from /var/log/containers
+    <source>
+      @type tail
+      @id in_tail_container_logs
+      path /var/log/containers/*.log
+      pos_file /var/log/fluentd-containers.log.pos
+      tag kubernetes.*
+      read_from_head true
+      <parse>
+        @type multi_format
+        <pattern>
+          format json
+          time_key time
+          time_format %Y-%m-%dT%H:%M:%S.%NZ
+        </pattern>
+        <pattern>
+          format /^(?<time>.+) (?<stream>stdout|stderr) [^ ]* (?<log>.*)$/
+          time_format %Y-%m-%dT%H:%M:%S.%N%:z
+        </pattern>
+      </parse>
+    </source>
+
+  02_filters.conf: |-
+    # Enrich with Kubernetes metadata
+    <filter kubernetes.**>
+      @type kubernetes_metadata
+      @id filter_kube_metadata
+    </filter>
+
+    # Exclude fluentd's own logs to prevent loops
+    <filter kubernetes.**>
+      @type grep
+      <exclude>
+        key $.kubernetes.container_name
+        pattern /^fluentd/
+      </exclude>
+    </filter>
+
+  03_outputs.conf: |-
+    # Send to Loki
+    <match kubernetes.**>
+      @type loki
+      @id out_loki
+      url "http://loki-gateway.monitoring.svc.cluster.local:80"
+      extra_labels {"job":"fluentd","cluster":"axon"}
+      flush_interval 5s
+      <label>
+        namespace $.kubernetes.namespace_name
+        pod $.kubernetes.pod_name
+        container $.kubernetes.container_name
+        app $.kubernetes.labels.app
+      </label>
+      <buffer>
+        @type file
+        path /var/log/fluentd-loki
+        flush_mode interval
+        flush_interval 5s
+        chunk_limit_size 2m
+      </buffer>
+    </match>
+
+    # Also send to Kafka topic infra.logs
+    <match kubernetes.**>
+      @type kafka2
+      @id out_kafka_logs
+      brokers "#{ENV['KAFKA_BROKERS'] || 'localhost:9092'}"
+      default_topic infra.logs
+      <format>
+        @type json
+      </format>
+      <buffer>
+        @type file
+        path /var/log/fluentd-kafka
+        flush_interval 5s
+      </buffer>
+    </match>
+
+volumeMounts:
+  - name: varlog
+    mountPath: /var/log
+  - name: varlibdockercontainers
+    mountPath: /var/lib/docker/containers
+    readOnly: true
+
+volumes:
+  - name: varlog
+    hostPath:
+      path: /var/log
+  - name: varlibdockercontainers
+    hostPath:
+      path: /var/lib/docker/containers
+
+env:
+  - name: KAFKA_BROKERS
+    value: "localhost:9092"

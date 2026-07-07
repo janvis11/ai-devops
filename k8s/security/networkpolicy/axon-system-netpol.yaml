@@ -1,0 +1,112 @@
+---
+# k8s/security/networkpolicy/axon-system-netpol.yaml
+# NetworkPolicy for axon-system namespace.
+# axon-agent only accepts ingress from monitoring (Alertmanager webhook calls).
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: axon-agent-ingress
+  namespace: axon-system
+  labels:
+    app.kubernetes.io/name: axon-agent
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: axon-agent
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Allow from monitoring namespace (Alertmanager → /webhook/alertmanager)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8000
+
+    # Allow from backstage (env-request triggers)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backstage
+      ports:
+        - protocol: TCP
+          port: 8000
+
+    # Allow intra-namespace (for Vault agent sidecar)
+    - from:
+        - podSelector: {}
+
+  egress:
+    # Allow to kube-apiserver (for K8s Python client)
+    - ports:
+        - protocol: TCP
+          port: 6443
+
+    # Allow to monitoring namespace (Prometheus queries)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090   # Prometheus
+        - protocol: TCP
+          port: 9093   # Alertmanager
+
+    # Allow to kafka (docker-compose on host)
+    - ports:
+        - protocol: TCP
+          port: 9092
+        - protocol: TCP
+          port: 9093   # SASL
+
+    # Allow to PostgreSQL
+    - ports:
+        - protocol: TCP
+          port: 5432
+
+    # Allow to Vault (in security namespace)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: security
+      ports:
+        - protocol: TCP
+          port: 8200
+
+    # Allow DNS
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # Allow HTTPS for Claude API calls
+    - ports:
+        - protocol: TCP
+          port: 443
+
+    # Allow Slack webhook
+    - ports:
+        - protocol: TCP
+          port: 443
+
+---
+# ─── Deny all by default for axon-system ─────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: axon-system
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

@@ -1,0 +1,35 @@
+---
+# k8s/security/opa/no-latest-tag-constraint.yaml
+# Applies the K8sNoLatestTag constraint to the apps namespace.
+# Any Deployment/StatefulSet/DaemonSet in 'apps' with :latest tag will be rejected.
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sNoLatestTag
+metadata:
+  name: no-latest-tag
+  annotations:
+    description: Blocks :latest image tags in the apps namespace
+spec:
+  # Where to enforce
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds:
+          - Deployment
+          - StatefulSet
+          - DaemonSet
+          - ReplicaSet
+    namespaces:
+      - apps
+      - axon-system
+      - monitoring
+      - backstage
+
+  # Warn mode: log violation without rejecting (set to Deny for hard enforcement)
+  enforcementAction: deny
+
+  parameters:
+    # These images are exempt from the :latest check (base images in special cases)
+    exemptImages:
+      - "gcr.io/distroless/"
+      - "scratch"

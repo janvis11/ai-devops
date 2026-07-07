@@ -1,0 +1,93 @@
+---
+# k8s/security/opa/protect-axon-system-template.yaml
+# OPA Gatekeeper ConstraintTemplate — prevents non-cluster-admins
+# from deploying anything into the axon-system namespace.
+
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sprotectnamespace
+  annotations:
+    description: >
+      Protects specified namespaces from deployments by non-cluster-admin users.
+      Only users in the system:masters group can create/modify resources in protected namespaces.
+    owner: axon-platform
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sProtectNamespace
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            allowedGroups:
+              type: array
+              description: Groups allowed to deploy (in addition to system:masters)
+              items:
+                type: string
+            protectedNamespaces:
+              type: array
+              description: Namespaces this constraint applies to
+              items:
+                type: string
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sprotectnamespace
+
+        import future.keywords.if
+        import future.keywords.in
+
+        # Default allowed groups always includes cluster-admin
+        default_allowed_groups := {"system:masters", "system:cluster-admins"}
+
+        # Merge with user-defined allowed groups
+        all_allowed_groups[group] {
+          group := default_allowed_groups[_]
+        }
+
+        all_allowed_groups[group] {
+          group := input.parameters.allowedGroups[_]
+        }
+
+        # Check if the requesting user is in an allowed group
+        is_authorized if {
+          group := input.review.userInfo.groups[_]
+          all_allowed_groups[group]
+        }
+
+        # Check if the requesting user is a service account in an allowed namespace
+        is_authorized if {
+          startswith(input.review.userInfo.username, "system:serviceaccount:kube-system:")
+        }
+
+        # Check if this is a system operation (e.g., controller-manager)
+        is_authorized if {
+          startswith(input.review.userInfo.username, "system:")
+          contains(input.review.userInfo.username, "controller")
+        }
+
+        # Violation: unauthorized user trying to deploy to protected namespace
+        violation[{"msg": msg}] {
+          protected_ns := input.parameters.protectedNamespaces[_]
+          input.review.object.metadata.namespace == protected_ns
+          not is_authorized
+          msg := sprintf(
+            "Namespace '%v' is protected. Only cluster-admins can deploy here. Your user '%v' is not authorized.",
+            [input.review.object.metadata.namespace, input.review.userInfo.username]
+          )
+        }
+
+        # Also protect at namespace creation for namespaces matching the pattern
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Namespace"
+          protected_ns := input.parameters.protectedNamespaces[_]
+          input.review.object.metadata.name == protected_ns
+          not is_authorized
+          msg := sprintf(
+            "Namespace '%v' is protected and cannot be modified by user '%v'.",
+            [input.review.object.metadata.name, input.review.userInfo.username]
+          )
+        }

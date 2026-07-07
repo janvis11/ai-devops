@@ -1,0 +1,102 @@
+# vault-values.yaml — HashiCorp Vault Helm chart values
+# Chart: hashicorp/vault
+# Usage: helm install vault hashicorp/vault -n security -f k8s/security/vault-values.yaml
+
+global:
+  enabled: true
+  tlsDisable: true  # TLS terminated at ingress for dev; enable for prod
+
+# ─── Injector (Vault Agent Sidecar) ──────────────────────────────────────────
+injector:
+  enabled: true
+  replicas: 1
+  
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "250m"
+
+  # Webhook configuration
+  webhook:
+    failurePolicy: Ignore  # Don't block pod creation if injector is down (dev mode)
+    
+  # Namespaces to watch (empty = all)
+  watchedNamespaces: ""
+
+# ─── Vault Server ─────────────────────────────────────────────────────────────
+server:
+  enabled: true
+  
+  # For dev: standalone single-instance with dev mode
+  # For prod: switch to ha with raft backend
+  dev:
+    enabled: true        # Dev mode: auto-unseal, in-memory, root token = "root"
+    devRootToken: "root" # Change in production!
+
+  # Resources
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+  # Liveness and readiness probes
+  readinessProbe:
+    enabled: true
+    path: "/v1/sys/health?standbyok=true"
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 30
+
+  livenessProbe:
+    enabled: true
+    path: "/v1/sys/health?standbyok=true"
+    initialDelaySeconds: 60
+    periodSeconds: 5
+    failureThreshold: 3
+
+  # Service configuration
+  service:
+    enabled: true
+    type: NodePort
+    nodePort: 32200
+    port: 8200
+    targetPort: 8200
+
+  # Annotations for the axon-agent sidecar injection
+  # (these go on the workload pod, not the Vault pod)
+  # Kept here as reference — see security.md for usage
+  #
+  # vault.hashicorp.com/agent-inject: "true"
+  # vault.hashicorp.com/role: "axon-agent"
+  # vault.hashicorp.com/agent-inject-secret-config: "secret/data/axon/config"
+  # vault.hashicorp.com/agent-inject-template-config: |
+  #   {{- with secret "secret/data/axon/config" -}}
+  #   CLAUDE_API_KEY={{ .Data.data.claude_api_key }}
+  #   KAFKA_PASSWORD={{ .Data.data.kafka_password }}
+  #   PG_PASSWORD={{ .Data.data.pg_password }}
+  #   {{- end }}
+
+  # Storage (dev mode uses in-memory, no PVC needed)
+  dataStorage:
+    enabled: false  # disabled in dev mode
+
+  # Audit log to stdout
+  auditStorage:
+    enabled: false
+
+  # HA config (disabled for local dev)
+  ha:
+    enabled: false
+
+# ─── UI ───────────────────────────────────────────────────────────────────────
+ui:
+  enabled: true
+  serviceType: NodePort
+  serviceNodePort: 32201
+  externalPort: 8200

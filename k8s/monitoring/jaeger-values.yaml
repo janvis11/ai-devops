@@ -1,0 +1,44 @@
+# k8s/monitoring/jaeger-values.yaml — Jaeger Helm values
+# Chart: jaegertracing/jaeger
+# All-in-one mode for local dev (collector + query + storage)
+
+provisionDataStore:
+  cassandra: false
+  elasticsearch: false
+  kafka: false
+
+allInOne:
+  enabled: true
+  image:
+    tag: "1.57.0"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # In-memory storage for dev (loses data on restart)
+  extraEnv:
+    - name: SPAN_STORAGE_TYPE
+      value: memory
+    - name: MEMORY_MAX_TRACES
+      value: "100000"
+
+  service:
+    type: NodePort
+
+# Disable separate components (all-in-one replaces them)
+collector:
+  enabled: false
+
+query:
+  enabled: false
+
+agent:
+  enabled: false
+
+storage:
+  type: memory

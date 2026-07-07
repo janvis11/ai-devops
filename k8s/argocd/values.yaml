@@ -1,0 +1,62 @@
+# k8s/argocd/values.yaml — ArgoCD Helm values
+# Chart: argo/argo-cd
+
+global:
+  image:
+    tag: "v2.11.3"
+
+server:
+  service:
+    type: NodePort
+    nodePortHttp: 30080
+    nodePortHttps: 30443
+
+  # Disable TLS in dev (terminate at ingress)
+  extraArgs:
+    - --insecure
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+repoServer:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+applicationSet:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+dex:
+  enabled: false  # disable SSO in dev
+
+redis:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+configs:
+  params:
+    server.insecure: true
+
+  # ArgoCD admin password (bcrypt of "admin" — change in prod!)
+  secret:
+    argocdServerAdminPassword: "$2a$10$8qAhFY3EhiJxkRYQvkFMIemTW/wUAOcFRoGoVjRMRDkTioG8mhO62"
