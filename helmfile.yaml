@@ -1,0 +1,169 @@
+# helmfile.yaml — AXON Platform Helm Release Orchestrator
+# Manages all Helm releases for the AXON platform.
+#
+# Usage:
+#   helmfile apply                         # Apply all releases
+#   helmfile apply -l name=vault           # Apply specific release
+#   helmfile diff                          # Show pending changes
+#   helmfile sync                          # Force sync all releases
+#   helmfile destroy                       # Tear everything down
+#
+# Prerequisites:
+#   - Helm 3.x
+#   - helmfile (https://helmfile.readthedocs.io)
+#   - kubectl configured to target k3s cluster
+
+repositories:
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+
+  - name: argo
+    url: https://argoproj.github.io/argo-helm
+
+  - name: hashicorp
+    url: https://helm.releases.hashicorp.com
+
+  - name: sealed-secrets
+    url: https://bitnami-labs.github.io/sealed-secrets
+
+  - name: gatekeeper
+    url: https://open-policy-agent.github.io/gatekeeper/charts
+
+  - name: jaegertracing
+    url: https://jaegertracing.github.io/helm-charts
+
+  - name: fluent
+    url: https://fluent.github.io/helm-charts
+
+  - name: backstage
+    url: https://backstage.github.io/charts
+
+---
+
+helmDefaults:
+  wait: true
+  timeout: 600
+  cleanupOnFail: true
+  atomic: false   # Don't auto-rollback in dev — we want to see errors
+
+environments:
+  dev:
+    values:
+      - environment: dev
+  prod:
+    values:
+      - environment: prod
+
+releases:
+
+  # ─── ArgoCD ─────────────────────────────────────────────────────────────────
+  - name: argocd
+    namespace: gitops
+    chart: argo/argo-cd
+    version: "~7.0"
+    createNamespace: true
+    values:
+      - k8s/argocd/values.yaml
+    labels:
+      tier: gitops
+      name: argocd
+
+  # ─── Vault ──────────────────────────────────────────────────────────────────
+  - name: vault
+    namespace: security
+    chart: hashicorp/vault
+    version: "~0.28"
+    createNamespace: true
+    values:
+      - k8s/security/vault-values.yaml
+    labels:
+      tier: security
+      name: vault
+
+  # ─── Sealed Secrets ─────────────────────────────────────────────────────────
+  - name: sealed-secrets
+    namespace: security
+    chart: sealed-secrets/sealed-secrets
+    version: "~2.16"
+    createNamespace: false  # namespace created by vault release above
+    set:
+      - name: fullnameOverride
+        value: sealed-secrets-controller
+    labels:
+      tier: security
+      name: sealed-secrets
+
+  # ─── OPA Gatekeeper ─────────────────────────────────────────────────────────
+  - name: gatekeeper
+    namespace: security
+    chart: gatekeeper/gatekeeper
+    version: "~3.17"
+    createNamespace: false
+    values:
+      - k8s/security/gatekeeper-values.yaml
+    labels:
+      tier: security
+      name: gatekeeper
+
+  # ─── Prometheus Stack (includes Grafana + Alertmanager) ─────────────────────
+  - name: kube-prometheus-stack
+    namespace: monitoring
+    chart: prometheus-community/kube-prometheus-stack
+    version: "~61.0"
+    createNamespace: true
+    values:
+      - k8s/monitoring/prometheus-values.yaml
+    labels:
+      tier: observability
+      name: kube-prometheus-stack
+
+  # ─── Loki ───────────────────────────────────────────────────────────────────
+  - name: loki
+    namespace: monitoring
+    chart: grafana/loki
+    version: "~6.6"
+    createNamespace: false
+    values:
+      - k8s/monitoring/loki-values.yaml
+    labels:
+      tier: observability
+      name: loki
+
+  # ─── Fluentd ────────────────────────────────────────────────────────────────
+  - name: fluentd
+    namespace: monitoring
+    chart: fluent/fluentd
+    version: "~0.5"
+    createNamespace: false
+    values:
+      - k8s/monitoring/fluentd-values.yaml
+    labels:
+      tier: observability
+      name: fluentd
+
+  # ─── Jaeger ─────────────────────────────────────────────────────────────────
+  - name: jaeger
+    namespace: monitoring
+    chart: jaegertracing/jaeger
+    version: "~3.3"
+    createNamespace: false
+    values:
+      - k8s/monitoring/jaeger-values.yaml
+    labels:
+      tier: observability
+      name: jaeger
+
+  # ─── Backstage ──────────────────────────────────────────────────────────────
+  - name: backstage
+    namespace: backstage
+    chart: backstage/backstage
+    version: "~1.9"
+    createNamespace: true
+    values:
+      - k8s/backstage/values.yaml
+    labels:
+      tier: developer-portal
+      name: backstage
