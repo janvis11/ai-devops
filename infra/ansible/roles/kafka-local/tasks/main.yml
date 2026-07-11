@@ -1,0 +1,35 @@
+---
+# infra/ansible/roles/kafka-local/tasks/main.yml
+# Role tasks for managing local Kafka via docker-compose
+
+- name: Check if docker is available
+  ansible.builtin.command: docker info
+  register: docker_info
+  changed_when: false
+  failed_when: docker_info.rc != 0
+
+- name: Check if docker compose is available
+  ansible.builtin.command: docker compose version
+  register: compose_version
+  changed_when: false
+  failed_when: compose_version.rc != 0
+
+- name: Bring up Kafka cluster
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: "{{ kafka_compose_dir | default(playbook_dir + '/../../../kafka') }}"
+  register: kafka_up
+  changed_when: "'Started' in kafka_up.stdout or 'Created' in kafka_up.stdout"
+
+- name: Wait for Kafka broker to be ready
+  ansible.builtin.pause:
+    seconds: 20
+    prompt: "Waiting for Kafka brokers to be ready..."
+
+- name: Verify Kafka is running
+  ansible.builtin.command:
+    cmd: docker exec kafka-broker-1 kafka-broker-api-versions.sh --bootstrap-server localhost:9092
+  register: kafka_verify
+  retries: 5
+  delay: 10
+  until: kafka_verify.rc == 0

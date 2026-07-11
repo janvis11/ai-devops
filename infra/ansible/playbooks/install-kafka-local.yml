@@ -1,0 +1,81 @@
+---
+# infra/ansible/playbooks/install-kafka-local.yml
+# Starts the local Kafka cluster via docker-compose (KRaft mode, no Zookeeper).
+# Run this on the local machine where Docker is installed.
+
+- name: Start local Kafka cluster (KRaft / docker-compose)
+  hosts: localhost_group
+  gather_facts: true
+
+  vars:
+    kafka_compose_dir: "{{ playbook_dir }}/../../../kafka"
+    topics:
+      - name: infra.alerts
+        partitions: 3
+        replication_factor: 1
+      - name: infra.logs
+        partitions: 3
+        replication_factor: 1
+      - name: infra.traces
+        partitions: 3
+        replication_factor: 1
+      - name: infra.k8s-events
+        partitions: 3
+        replication_factor: 1
+      - name: agent.actions
+        partitions: 1
+        replication_factor: 1
+      - name: agent.decisions
+        partitions: 1
+        replication_factor: 1
+      - name: dev.env-requests
+        partitions: 1
+        replication_factor: 1
+
+  tasks:
+    - name: Ensure kafka compose directory exists
+      ansible.builtin.stat:
+        path: "{{ kafka_compose_dir }}"
+      register: kafka_dir
+
+    - name: Start Kafka via docker-compose
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: "{{ kafka_compose_dir }}"
+      register: compose_result
+      changed_when: "'Started' in compose_result.stdout or 'Created' in compose_result.stdout"
+
+    - name: Wait 15s for Kafka brokers to elect leader
+      ansible.builtin.pause:
+        seconds: 15
+
+    - name: Create Kafka topics
+      ansible.builtin.command:
+        cmd: >
+          docker exec kafka-broker-1
+          kafka-topics.sh
+          --bootstrap-server localhost:9092
+          --create
+          --if-not-exists
+          --topic {{ item.name }}
+          --partitions {{ item.partitions }}
+          --replication-factor {{ item.replication_factor }}
+      loop: "{{ topics }}"
+      register: topic_create
+      changed_when: "'Created topic' in topic_create.stdout"
+      ignore_errors: true   # topic may already exist
+
+    - name: List created topics
+      ansible.builtin.command:
+        cmd: >
+          docker exec kafka-broker-1
+          kafka-topics.sh --bootstrap-server localhost:9092 --list
+      register: topic_list
+
+    - name: Show Kafka topics
+      ansible.builtin.debug:
+        msg: |
+          Kafka topics available:
+          {{ topic_list.stdout_lines | join('\n') }}
+          
+          kafka-ui: http://localhost:8080

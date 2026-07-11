@@ -1,0 +1,82 @@
+---
+# infra/ansible/roles/vault-bootstrap/tasks/main.yml
+# Role tasks for Vault initialization and secret bootstrapping
+
+- name: Wait for Vault to be reachable
+  ansible.builtin.uri:
+    url: "{{ vault_url }}/v1/sys/health"
+    method: GET
+    status_code: [200, 429]
+    timeout: 10
+  register: vault_check
+  retries: 20
+  delay: 15
+  until: vault_check.status in [200, 429]
+
+- name: Enable KV v2 secrets engine
+  ansible.builtin.uri:
+    url: "{{ vault_url }}/v1/sys/mounts/secret"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    body_format: json
+    body:
+      type: kv
+      options:
+        version: "2"
+    status_code: [200, 204, 400]  # 400 = already enabled
+  ignore_errors: true
+
+- name: Enable Kubernetes auth method
+  ansible.builtin.uri:
+    url: "{{ vault_url }}/v1/sys/auth/kubernetes"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    body_format: json
+    body:
+      type: kubernetes
+    status_code: [200, 204, 400]
+  ignore_errors: true
+
+- name: Configure Kubernetes auth method
+  ansible.builtin.uri:
+    url: "{{ vault_url }}/v1/auth/kubernetes/config"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    body_format: json
+    body:
+      kubernetes_host: "https://kubernetes.default.svc"
+    status_code: [200, 204]
+
+- name: Write axon-agent Vault policy
+  ansible.builtin.uri:
+    url: "{{ vault_url }}/v1/sys/policies/acl/axon-agent"
+    method: PUT
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    body_format: json
+    body:
+      policy: |
+        path "secret/data/axon/*" {
+          capabilities = ["read"]
+        }
+        path "secret/metadata/axon/*" {
+          capabilities = ["list"]
+        }
+    status_code: [200, 204]
+
+- name: Create axon-agent K8s auth role
+  ansible.builtin.uri:
+    url: "{{ vault_url }}/v1/auth/kubernetes/role/axon-agent"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    body_format: json
+    body:
+      bound_service_account_names: ["axon-agent"]
+      bound_service_account_namespaces: ["axon-system"]
+      policies: ["axon-agent"]
+      ttl: "1h"
+    status_code: [200, 204]
