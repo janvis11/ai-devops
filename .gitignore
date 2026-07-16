@@ -48,3 +48,7 @@ Thumbs.db
 # Agent Checkpoints
 *.sqlite3
 *.db
+
+# skill for making flowcharts
+.agents
+skills-lock.json
