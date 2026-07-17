@@ -1,0 +1,222 @@
+---
+# k8s/monitoring/prometheus-rules.yaml
+# PrometheusRule — all AXON alerting rules loaded by kube-prometheus-stack
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: axon-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack   # must match prometheus selector
+    app.kubernetes.io/component: alerting
+spec:
+  groups:
+
+    # ── Pod Health ─────────────────────────────────────────────────────────────
+    - name: axon.pod-health
+      interval: 30s
+      rules:
+
+        - alert: PodOOMKilled
+          expr: |
+            kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+          for: 0m
+          labels:
+            severity: critical
+            team: axon
+          annotations:
+            summary: "Pod {{ $labels.pod }} OOMKilled in {{ $labels.namespace }}"
+            description: |
+              Container {{ $labels.container }} in pod {{ $labels.pod }}
+              (namespace: {{ $labels.namespace }}) was OOMKilled.
+              Increase memory limits or investigate memory leak.
+            runbook_url: "https://github.com/janvis11/axon/docs/runbooks/oomkill.md"
+            action: "AXON agent will auto-remediate: scale memory limit + restart"
+
+        - alert: PodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total[15m]) > 0.5
+          for: 5m
+          labels:
+            severity: critical
+            team: axon
+          annotations:
+            summary: "Pod {{ $labels.pod }} is crash-looping"
+            description: |
+              Pod {{ $labels.pod }} in {{ $labels.namespace }} is restarting
+              more than 0.5 times/min over the last 15 minutes.
+            runbook_url: "https://github.com/janvis11/axon/docs/runbooks/crashloop.md"
+
+        - alert: PodNotReady
+          expr: |
+            kube_pod_status_ready{condition="false"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            team: axon
+          annotations:
+            summary: "Pod {{ $labels.pod }} not ready"
+            description: "Pod {{ $labels.pod }} in {{ $labels.namespace }} has been NotReady for 5 minutes."
+
+        - alert: PodPendingTooLong
+          expr: |
+            kube_pod_status_phase{phase="Pending"} == 1
+          for: 10m
+          labels:
+            severity: warning
+            team: axon
+          annotations:
+            summary: "Pod {{ $labels.pod }} stuck in Pending"
+            description: "Pod {{ $labels.pod }} in {{ $labels.namespace }} has been Pending for 10+ minutes. Possible scheduling issue."
+
+        - alert: ContainerHighMemoryUsage
+          expr: |
+            (
+              container_memory_working_set_bytes{container!=""}
+              / on(namespace, pod, container)
+              kube_pod_container_resource_limits{resource="memory"}
+            ) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            team: axon
+          annotations:
+            summary: "Container {{ $labels.container }} memory at {{ $value | humanizePercentage }}"
+            description: |
+              Container {{ $labels.container }} in pod {{ $labels.pod }}
+              is using {{ $value | humanizePercentage }} of its memory limit.
+
+        - alert: DeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas != kube_deployment_status_available_replicas
+          for: 10m
+          labels:
+            severity: warning
+            team: axon
+          annotations:
+            summary: "Deployment {{ $labels.deployment }} has {{ $value }} replicas mismatch"
+            description: "Desired replicas != available replicas for {{ $labels.deployment }} in {{ $labels.namespace }}"
+
+    # ── SLO Alerts ────────────────────────────────────────────────────────────
+    - name: axon.slo
+      interval: 60s
+      rules:
+
+        - alert: HighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{status=~"5.."}[5m])) by (job)
+              /
+              sum(rate(http_requests_total[5m])) by (job)
+            ) > 0.01
+          for: 5m
+          labels:
+            severity: critical
+            team: axon
+            slo: error_rate
+          annotations:
+            summary: "High error rate on {{ $labels.job }}: {{ $value | humanizePercentage }}"
+            description: "Error rate > 1% SLO target over 5 minutes."
+
+        - alert: HighLatencyP99
+          expr: |
+            histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 1.0
+          for: 5m
+          labels:
+            severity: warning
+            team: axon
+            slo: latency
+          annotations:
+            summary: "P99 latency {{ $value | humanizeDuration }} exceeds 1s SLO"
+            description: "P99 request latency is above the 1000ms SLO target."
+
+        - alert: ServiceDown
+          expr: |
+            up{job=~"axon.*"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: axon
+          annotations:
+            summary: "Service {{ $labels.job }} is down"
+            description: "Prometheus scrape target {{ $labels.job }} ({{ $labels.instance }}) is not reachable."
+
+    # ── AXON Agent Metrics ────────────────────────────────────────────────────
+    - name: axon.agent
+      interval: 30s
+      rules:
+
+        - alert: AgentActionBacklog
+          expr: |
+            axon_agent_pending_actions > 10
+          for: 2m
+          labels:
+            severity: warning
+            team: axon
+          annotations:
+            summary: "Agent has {{ $value }} pending actions"
+            description: "AXON agent action queue has grown beyond 10. Possible processing bottleneck."
+
+        - alert: AgentKafkaConsumerLag
+          expr: |
+            kafka_consumergroup_lag{topic="infra.alerts", consumergroup="axon-alert-consumer"} > 100
+          for: 5m
+          labels:
+            severity: warning
+            team: axon
+          annotations:
+            summary: "Kafka consumer lag {{ $value }} on infra.alerts"
+            description: "AXON agent is falling behind on consuming infra.alerts topic. Possible agent slowdown."
+
+        - alert: AgentLLMLatencyHigh
+          expr: |
+            histogram_quantile(0.95, rate(axon_llm_request_duration_seconds_bucket[5m])) > 10
+          for: 5m
+          labels:
+            severity: warning
+            team: axon
+          annotations:
+            summary: "LLM API P95 latency {{ $value | humanizeDuration }}"
+            description: "Claude API P95 latency exceeds 10s. Possible API rate limiting."
+
+    # ── Infrastructure ────────────────────────────────────────────────────────
+    - name: axon.infra
+      interval: 60s
+      rules:
+
+        - alert: NodeHighCPU
+          expr: |
+            100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+          for: 10m
+          labels:
+            severity: warning
+            team: axon
+          annotations:
+            summary: "Node {{ $labels.instance }} CPU at {{ $value | humanizePercentage }}"
+            description: "Node CPU usage is above 85% for 10 minutes."
+
+        - alert: NodeHighMemory
+          expr: |
+            (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.90
+          for: 5m
+          labels:
+            severity: critical
+            team: axon
+          annotations:
+            summary: "Node {{ $labels.instance }} memory at {{ $value | humanizePercentage }}"
+            description: "Node memory usage is above 90%."
+
+        - alert: PersistentVolumeNearFull
+          expr: |
+            (
+              kubelet_volume_stats_used_bytes /
+              kubelet_volume_stats_capacity_bytes
+            ) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            team: axon
+          annotations:
+            summary: "PVC {{ $labels.persistentvolumeclaim }} at {{ $value | humanizePercentage }}"
+            description: "Persistent Volume Claim is 85%+ full."

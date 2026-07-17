@@ -1,0 +1,162 @@
+---
+# k8s/monitoring/grafana-dashboards/slo-dashboard.yaml
+# Grafana Dashboard ConfigMap — SLO Tracker
+# Tracks error rate, P99 latency, and availability SLOs for AXON services.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-slo
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/component: grafana-dashboard
+data:
+  slo-tracker.json: |
+    {
+      "id": null,
+      "uid": "axon-slo-tracker",
+      "title": "AXON — SLO Tracker",
+      "description": "Error rate, P99 latency, availability SLOs for axon-api, axon-worker",
+      "tags": ["axon", "slo", "reliability"],
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "1m",
+      "time": {"from": "now-24h", "to": "now"},
+      "templating": {
+        "list": [
+          {
+            "name": "service",
+            "type": "query",
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "query": "label_values(http_requests_total, job)",
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*"
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Error Rate (SLO: < 1%)",
+          "type": "gauge",
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "orientation": "auto", "showThresholdLabels": false, "showThresholdMarkers": true},
+          "targets": [
+            {
+              "expr": "sum(rate(http_requests_total{job=~\"$service\", status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=~\"$service\"}[5m])) * 100",
+              "legendFormat": "Error Rate %"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 10,
+              "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.5}, {"color": "red", "value": 1}]},
+              "color": {"mode": "thresholds"}
+            }
+          }
+        },
+        {
+          "id": 2,
+          "title": "P99 Latency (SLO: < 500ms)",
+          "type": "gauge",
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m])) * 1000",
+              "legendFormat": "P99 ms"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms",
+              "min": 0,
+              "max": 2000,
+              "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 300}, {"color": "red", "value": 500}]},
+              "color": {"mode": "thresholds"}
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "Availability (SLO: > 99.9%)",
+          "type": "gauge",
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+          "targets": [
+            {
+              "expr": "avg_over_time(up{job=~\"$service\"}[24h]) * 100",
+              "legendFormat": "Availability"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 99}, {"color": "green", "value": 99.9}]},
+              "color": {"mode": "thresholds"}
+            }
+          }
+        },
+        {
+          "id": 4,
+          "title": "Request Rate (req/s)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "targets": [
+            {
+              "expr": "sum(rate(http_requests_total{job=~\"$service\"}[5m])) by (job, status)",
+              "legendFormat": "{{ job }} - {{ status }}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "palette-classic"}}}
+        },
+        {
+          "id": 5,
+          "title": "Latency Percentiles (P50, P95, P99)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m]))",
+              "legendFormat": "P50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m]))",
+              "legendFormat": "P95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m]))",
+              "legendFormat": "P99"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "palette-classic"}}}
+        },
+        {
+          "id": 6,
+          "title": "Error Budget Remaining (30d rolling)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+          "description": "99.9% availability SLO = 43.2 min/month error budget",
+          "targets": [
+            {
+              "expr": "1 - (sum_over_time((1 - avg(up{job=~\"$service\"}))[30d:5m]) / (30 * 24 * 60 / 5)) / 0.001",
+              "legendFormat": "Error Budget Remaining"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1,
+              "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.25}, {"color": "green", "value": 0.5}]},
+              "color": {"mode": "thresholds"}
+            }
+          }
+        }
+      ]
+    }

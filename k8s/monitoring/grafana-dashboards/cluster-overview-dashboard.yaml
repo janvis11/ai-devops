@@ -1,0 +1,152 @@
+---
+# k8s/monitoring/grafana-dashboards/cluster-overview-dashboard.yaml
+# Grafana Dashboard ConfigMap — Cluster Overview
+# Loaded automatically by the Grafana sidecar (label: grafana_dashboard: "1")
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-cluster-overview
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/component: grafana-dashboard
+data:
+  cluster-overview.json: |
+    {
+      "id": null,
+      "uid": "axon-cluster-overview",
+      "title": "AXON — Cluster Overview",
+      "description": "Pod status, node resources, deployment timeline, active alerts",
+      "tags": ["axon", "cluster", "overview"],
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "30s",
+      "time": {"from": "now-3h", "to": "now"},
+      "templating": {
+        "list": [
+          {
+            "name": "namespace",
+            "type": "query",
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "query": "label_values(kube_pod_info, namespace)",
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "current": {"text": "All", "value": "$__all"}
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Pod Status Summary",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+          "targets": [
+            {
+              "expr": "count(kube_pod_status_phase{namespace=~\"$namespace\", phase=\"Running\"})",
+              "legendFormat": "Running"
+            }
+          ],
+          "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "green"}, "unit": "short"}}
+        },
+        {
+          "id": 2,
+          "title": "Pods Not Ready",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "targets": [
+            {
+              "expr": "count(kube_pod_status_ready{namespace=~\"$namespace\", condition=\"false\"} == 1) or vector(0)",
+              "legendFormat": "Not Ready"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {"unit": "short"},
+            "overrides": [{"matcher": {"id": "byName", "options": "Not Ready"}, "properties": [{"id": "color", "value": {"mode": "thresholds"}}, {"id": "thresholds", "value": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}]}]
+          }
+        },
+        {
+          "id": 3,
+          "title": "Active Alerts",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "targets": [
+            {
+              "expr": "count(ALERTS{alertstate=\"firing\", namespace=~\"$namespace\"}) or vector(0)",
+              "legendFormat": "Firing Alerts"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}]}, "color": {"mode": "thresholds"}}}
+        },
+        {
+          "id": 4,
+          "title": "OOMKilled (last 1h)",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+          "targets": [
+            {
+              "expr": "count(kube_pod_container_status_last_terminated_reason{namespace=~\"$namespace\", reason=\"OOMKilled\"} == 1) or vector(0)",
+              "legendFormat": "OOMKilled"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}}
+        },
+        {
+          "id": 5,
+          "title": "Node CPU Usage %",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "targets": [
+            {
+              "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+              "legendFormat": "{{ instance }}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 85}]}, "color": {"mode": "palette-classic"}}}
+        },
+        {
+          "id": 6,
+          "title": "Node Memory Usage %",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "targets": [
+            {
+              "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+              "legendFormat": "{{ instance }}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100, "color": {"mode": "palette-classic"}}}
+        },
+        {
+          "id": 7,
+          "title": "Pod Restart Rate (5m)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+          "targets": [
+            {
+              "expr": "rate(kube_pod_container_status_restarts_total{namespace=~\"$namespace\"}[5m]) > 0",
+              "legendFormat": "{{ namespace }}/{{ pod }}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "ops", "color": {"mode": "palette-classic"}}}
+        },
+        {
+          "id": 8,
+          "title": "Active Alerts Table",
+          "type": "table",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
+          "targets": [
+            {
+              "expr": "ALERTS{alertstate=\"firing\", namespace=~\"$namespace\"}",
+              "format": "table",
+              "instant": true
+            }
+          ],
+          "options": {"sortBy": [{"displayName": "severity", "desc": true}]}
+        }
+      ]
+    }

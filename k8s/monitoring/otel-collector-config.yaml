@@ -1,0 +1,106 @@
+# k8s/monitoring/otel-collector-config.yaml
+# OpenTelemetry Collector ConfigMap
+# Pipeline: OTLP receivers → batch processor → Kafka (traces) + Jaeger (UI)
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: monitoring
+  labels:
+    app: otel-collector
+    app.kubernetes.io/component: observability
+data:
+  otel-collector-config.yaml: |
+    # ── Receivers ─────────────────────────────────────────────────────────────
+    receivers:
+      # Accept OTLP over gRPC (from axon-api, axon-worker, axon-agent)
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+      # Scrape Prometheus metrics (self-monitoring)
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: otel-collector
+              static_configs:
+                - targets: ["localhost:8888"]
+
+    # ── Processors ────────────────────────────────────────────────────────────
+    processors:
+      # Batch spans before exporting for efficiency
+      batch:
+        send_batch_size: 1000
+        timeout: 5s
+        send_batch_max_size: 1500
+
+      # Add resource attributes to all telemetry
+      resource:
+        attributes:
+          - key: cluster
+            value: axon-local
+            action: insert
+          - key: environment
+            value: dev
+            action: insert
+
+      # Memory limiter prevents OOM in the collector
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: 200
+        spike_limit_mib: 50
+
+    # ── Exporters ─────────────────────────────────────────────────────────────
+    exporters:
+      # Send trace spans to Kafka topic infra.traces
+      kafka/traces:
+        brokers:
+          - kafka-1.kafka:9092
+          - kafka-2.kafka:9092
+          - kafka-3.kafka:9092
+        topic: infra.traces
+        encoding: otlp_proto
+        producer:
+          max_message_bytes: 1000000
+          compression: lz4
+          flush_max_messages: 100
+
+      # Send to Jaeger for trace UI
+      otlp/jaeger:
+        endpoint: jaeger-collector.monitoring.svc.cluster.local:4317
+        tls:
+          insecure: true
+
+      # Send metrics to Prometheus remote write
+      prometheusremotewrite:
+        endpoint: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+
+      # Debug logging (dev only)
+      debug:
+        verbosity: basic
+
+    # ── Service Pipelines ──────────────────────────────────────────────────────
+    service:
+      pipelines:
+        # Traces → Kafka + Jaeger
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, resource, batch]
+          exporters: [kafka/traces, otlp/jaeger]
+
+        # Metrics → Prometheus
+        metrics:
+          receivers: [otlp, prometheus]
+          processors: [memory_limiter, resource, batch]
+          exporters: [prometheusremotewrite]
+
+      # Collector self-monitoring
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+        logs:
+          level: info

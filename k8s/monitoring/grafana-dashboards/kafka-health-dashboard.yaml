@@ -1,0 +1,176 @@
+---
+# k8s/monitoring/grafana-dashboards/kafka-health-dashboard.yaml
+# Grafana Dashboard ConfigMap — Kafka Health
+# Message rates, consumer group lag per topic, broker metrics, retention usage.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-kafka-health
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/component: grafana-dashboard
+data:
+  kafka-health.json: |
+    {
+      "id": null,
+      "uid": "axon-kafka-health",
+      "title": "AXON — Kafka Health",
+      "description": "Topic message rates, consumer lag, broker health, retention usage",
+      "tags": ["axon", "kafka", "streaming"],
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "30s",
+      "time": {"from": "now-3h", "to": "now"},
+      "templating": {
+        "list": [
+          {
+            "name": "topic",
+            "type": "query",
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "query": "label_values(kafka_topic_partitions, topic)",
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "regex": "^(?!_).*"
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Total Topics",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "targets": [
+            {"expr": "count(kafka_topic_partitions{topic!~\"^_.*\"})", "legendFormat": "Topics"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "blue"}}}
+        },
+        {
+          "id": 2,
+          "title": "Active Brokers",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "targets": [
+            {"expr": "count(kafka_brokers)", "legendFormat": "Brokers"}
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 2}, {"color": "green", "value": 3}]},
+              "color": {"mode": "thresholds"}
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "Total Consumer Lag (all groups)",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "targets": [
+            {"expr": "sum(kafka_consumergroup_lag{topic=~\"$topic\"})", "legendFormat": "Total Lag"}
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 100}, {"color": "red", "value": 500}]},
+              "color": {"mode": "thresholds"}
+            }
+          }
+        },
+        {
+          "id": 4,
+          "title": "Under-replicated Partitions",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+          "targets": [
+            {"expr": "kafka_server_replicamanager_underreplicatedpartitions or vector(0)", "legendFormat": "Under-replicated"}
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]},
+              "color": {"mode": "thresholds"}
+            }
+          }
+        },
+        {
+          "id": 5,
+          "title": "Messages In/sec per Topic",
+          "type": "timeseries",
+          "gridPos": {"h": 9, "w": 12, "x": 0, "y": 4},
+          "targets": [
+            {
+              "expr": "sum by (topic) (rate(kafka_topic_messages_in_total{topic=~\"$topic\"}[5m]))",
+              "legendFormat": "{{ topic }}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "msgps", "color": {"mode": "palette-classic"}}}
+        },
+        {
+          "id": 6,
+          "title": "Consumer Group Lag per Topic",
+          "type": "timeseries",
+          "gridPos": {"h": 9, "w": 12, "x": 12, "y": 4},
+          "targets": [
+            {
+              "expr": "sum by (topic, consumergroup) (kafka_consumergroup_lag{topic=~\"$topic\"})",
+              "legendFormat": "{{ consumergroup }} → {{ topic }}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {"mode": "palette-classic"},
+              "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 50}, {"color": "red", "value": 200}]}
+            }
+          }
+        },
+        {
+          "id": 7,
+          "title": "Bytes In/Out per Broker",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
+          "targets": [
+            {
+              "expr": "rate(kafka_server_brokertopicmetrics_bytesin_total[5m])",
+              "legendFormat": "broker-{{ instance }} IN"
+            },
+            {
+              "expr": "rate(kafka_server_brokertopicmetrics_bytesout_total[5m])",
+              "legendFormat": "broker-{{ instance }} OUT"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "Bps", "color": {"mode": "palette-classic"}}}
+        },
+        {
+          "id": 8,
+          "title": "Consumer Groups Lag Table",
+          "type": "table",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
+          "targets": [
+            {
+              "expr": "sum by (consumergroup, topic) (kafka_consumergroup_lag)",
+              "format": "table",
+              "instant": true
+            }
+          ],
+          "options": {"sortBy": [{"displayName": "Value", "desc": true}]},
+          "fieldConfig": {
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Value"},
+                "properties": [
+                  {"id": "displayName", "value": "Lag"},
+                  {"id": "thresholds", "value": {"steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 50}, {"color": "red", "value": 200}]}},
+                  {"id": "custom.displayMode", "value": "color-background"}
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
