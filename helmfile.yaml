@@ -29,6 +29,9 @@ repositories:
   - name: sealed-secrets
     url: https://bitnami-labs.github.io/sealed-secrets
 
+  - name: open-telemetry
+    url: https://open-telemetry.github.io/opentelemetry-helm-charts
+
   - name: gatekeeper
     url: https://open-policy-agent.github.io/gatekeeper/charts
 
@@ -155,6 +158,18 @@ releases:
     labels:
       tier: observability
       name: jaeger
+
+  # ─── OpenTelemetry Collector ─────────────────────────────────────────────────
+  - name: opentelemetry-collector
+    namespace: monitoring
+    chart: open-telemetry/opentelemetry-collector
+    version: "~0.91"
+    createNamespace: false
+    values:
+      - k8s/monitoring/otel-collector-values.yaml
+    labels:
+      tier: observability
+      name: opentelemetry-collector
 
   # ─── Backstage ──────────────────────────────────────────────────────────────
   - name: backstage
