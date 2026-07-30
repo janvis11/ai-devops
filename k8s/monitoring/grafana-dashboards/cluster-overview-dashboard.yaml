@@ -15,10 +15,10 @@ data:
   cluster-overview.json: |
     {
       "id": null,
-      "uid": "axon-cluster-overview",
-      "title": "AXON — Cluster Overview",
+      "uid": "devops-ai-cluster-overview",
+      "title": "devops.ai — Cluster Overview",
       "description": "Pod status, node resources, deployment timeline, active alerts",
-      "tags": ["axon", "cluster", "overview"],
+      "tags": ["devops.ai", "cluster", "overview"],
       "timezone": "browser",
       "schemaVersion": 38,
       "version": 1,

@@ -1,19 +1,19 @@
 ---
 # k8s/monitoring/alertmanager-config.yaml
-# AlertmanagerConfig CR — routes all alerts to AXON agent webhook.
+# AlertmanagerConfig CR — routes all alerts to devops.ai agent webhook.
 # Applied in the monitoring namespace, picked up by kube-prometheus-stack.
 
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
-  name: axon-alertmanager-config
+  name: devops-ai-alertmanager-config
   namespace: monitoring
   labels:
     release: kube-prometheus-stack
-    alertmanagerConfig: axon
+    alertmanagerConfig: devops.ai
 spec:
   route:
-    # Group alerts by the key fields that AXON correlates on
+    # Group alerts by the key fields that devops.ai correlates on
     groupBy:
       - alertname
       - namespace
@@ -24,14 +24,14 @@ spec:
     groupInterval: 5m     # Wait 5m before sending updated notifications
     repeatInterval: 1h    # Re-send unresolved alerts every hour
 
-    receiver: axon-webhook
+    receiver: devops-ai-webhook
 
     routes:
       # Critical alerts — send immediately, no wait
       - matchers:
           - name: severity
             value: critical
-        receiver: axon-webhook
+        receiver: devops-ai-webhook
         groupWait: 0s
         continue: true   # continue to also hit the default receiver
 
@@ -39,7 +39,7 @@ spec:
       - matchers:
           - name: severity
             value: warning
-        receiver: axon-webhook
+        receiver: devops-ai-webhook
 
       # Suppress watchdog (kube-prometheus heartbeat alert)
       - matchers:
@@ -48,10 +48,10 @@ spec:
         receiver: "null"
 
   receivers:
-    # ── Primary: AXON agent FastAPI webhook ────────────────────────────────────
-    - name: axon-webhook
+    # ── Primary: devops.ai agent FastAPI webhook ────────────────────────────────────
+    - name: devops-ai-webhook
       webhookConfigs:
-        - url: "http://axon-agent.axon-system.svc.cluster.local:8000/webhook/alertmanager"
+        - url: "http://devops-ai-agent.devops-ai-system.svc.cluster.local:8000/webhook/alertmanager"
           sendResolved: true
           maxAlerts: 50
           httpConfig:

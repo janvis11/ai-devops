@@ -11,7 +11,7 @@ metadata:
     description: >
       Prohibits container images with the :latest tag.
       All images must use a specific version tag or image digest.
-    owner: axon-platform
+    owner: devops.ai-platform
 spec:
   crd:
     spec:

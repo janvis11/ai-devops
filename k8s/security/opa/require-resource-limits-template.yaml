@@ -11,7 +11,7 @@ metadata:
     description: >
       Requires all containers to have memory and CPU resource limits defined.
       Prevents unbounded resource consumption in the cluster.
-    owner: axon-platform
+    owner: devops.ai-platform
 spec:
   crd:
     spec:

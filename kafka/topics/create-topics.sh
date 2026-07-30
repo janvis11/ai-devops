@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # kafka/topics/create-topics.sh
-# Creates all AXON platform Kafka topics with correct partitions and retention.
+# Creates all devops.ai platform Kafka topics with correct partitions and retention.
 # Run after: docker compose up -d && sleep 20
 #
 # Usage: bash kafka/topics/create-topics.sh [bootstrap-server]
@@ -12,7 +12,7 @@ KAFKA_BOOTSTRAP="${1:-localhost:9092}"
 TIMEOUT=120
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo " AXON — Kafka Topic Provisioner"
+echo " devops.ai — Kafka Topic Provisioner"
 echo " Broker: $KAFKA_BOOTSTRAP"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -54,7 +54,7 @@ create_topic() {
     || echo "  ⚠️   $TOPIC already exists — skipped"
 }
 
-echo ">>> Creating AXON topics..."
+echo ">>> Creating devops.ai topics..."
 echo ""
 
 # ── Infrastructure signal topics ──────────────────────────────────────────────
@@ -72,7 +72,7 @@ create_topic "infra.k8s-events"  3 2  259200000  "3d  | Kubernetes event watcher
 
 # ── Agent topics ──────────────────────────────────────────────────────────────
 #   agent.actions   — audit log of every remediation action (30d for compliance)
-create_topic "agent.actions"     1 2 2592000000  "30d | AXON agent audit log → PostgreSQL via Connect"
+create_topic "agent.actions"     1 2 2592000000  "30d | devops.ai agent audit log → PostgreSQL via Connect"
 
 #   agent.decisions — plain-English explanations streamed to React dashboard (1d)
 create_topic "agent.decisions"   1 2   86400000  "1d  | LangGraph decisions → SSE dashboard"

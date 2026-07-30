@@ -26,6 +26,6 @@ output "postgresql_endpoint" {
 
 output "postgresql_connection_string" {
   description = "Full PostgreSQL connection string"
-  value       = "postgresql://${var.db_username}@${module.database.endpoint}:5432/axon"
+  value       = "postgresql://${var.db_username}@${module.database.endpoint}:5432/devops_ai"
   sensitive   = true
 }

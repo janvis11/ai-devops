@@ -1,5 +1,5 @@
-# helmfile.yaml — AXON Platform Helm Release Orchestrator
-# Manages all Helm releases for the AXON platform.
+# helmfile.yaml — devops.ai Platform Helm Release Orchestrator
+# Manages all Helm releases for the devops.ai platform.
 #
 # Usage:
 #   helmfile apply                         # Apply all releases

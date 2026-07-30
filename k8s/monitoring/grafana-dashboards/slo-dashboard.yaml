@@ -1,7 +1,7 @@
 ---
 # k8s/monitoring/grafana-dashboards/slo-dashboard.yaml
 # Grafana Dashboard ConfigMap — SLO Tracker
-# Tracks error rate, P99 latency, and availability SLOs for AXON services.
+# Tracks error rate, P99 latency, and availability SLOs for devops.ai services.
 
 apiVersion: v1
 kind: ConfigMap
@@ -15,10 +15,10 @@ data:
   slo-tracker.json: |
     {
       "id": null,
-      "uid": "axon-slo-tracker",
-      "title": "AXON — SLO Tracker",
-      "description": "Error rate, P99 latency, availability SLOs for axon-api, axon-worker",
-      "tags": ["axon", "slo", "reliability"],
+      "uid": "devops.ai-slo-tracker",
+      "title": "devops.ai — SLO Tracker",
+      "description": "Error rate, P99 latency, availability SLOs for devops-ai-api, devops-ai-worker",
+      "tags": ["devops.ai", "slo", "reliability"],
       "timezone": "browser",
       "schemaVersion": 38,
       "version": 1,

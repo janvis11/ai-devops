@@ -1,30 +1,30 @@
 ---
-# k8s/security/rbac/axon-agent-rbac.yaml
-# RBAC resources for the AXON agent service account.
+# k8s/security/rbac/devops-ai-agent-rbac.yaml
+# RBAC resources for the devops.ai agent service account.
 # Grants the agent least-privilege access to pods, deployments, events, and HPAs.
 
 # ─── ServiceAccount ───────────────────────────────────────────────────────────
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: axon-agent
-  namespace: axon-system
+  name: devops-ai-agent
+  namespace: devops-ai-system
   labels:
-    app.kubernetes.io/name: axon-agent
+    app.kubernetes.io/name: devops-ai-agent
     app.kubernetes.io/component: rbac
   annotations:
     # Vault agent injector will use this SA for auth
     vault.hashicorp.com/agent-inject: "true"
-    vault.hashicorp.com/role: "axon-agent"
+    vault.hashicorp.com/role: "devops-ai-agent"
 
 ---
 # ─── ClusterRole ──────────────────────────────────────────────────────────────
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: axon-agent
+  name: devops-ai-agent
   labels:
-    app.kubernetes.io/name: axon-agent
+    app.kubernetes.io/name: devops-ai-agent
     app.kubernetes.io/component: rbac
 rules:
   # Pod operations — view, log fetch, delete (remediation)
@@ -109,15 +109,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: axon-agent
+  name: devops-ai-agent
   labels:
-    app.kubernetes.io/name: axon-agent
+    app.kubernetes.io/name: devops-ai-agent
     app.kubernetes.io/component: rbac
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: axon-agent
+  name: devops-ai-agent
 subjects:
   - kind: ServiceAccount
-    name: axon-agent
-    namespace: axon-system
+    name: devops-ai-agent
+    namespace: devops-ai-system

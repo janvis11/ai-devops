@@ -1,13 +1,13 @@
 {
-  "name": "axon-audit-sink",
+  "name": "devops-ai-audit-sink",
   "config": {
     "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
     "tasks.max": "1",
 
     "topics": "agent.actions",
 
-    "connection.url": "jdbc:postgresql://postgresql:5432/axon",
-    "connection.user": "axon",
+    "connection.url": "jdbc:postgresql://postgresql:5432/devops_ai",
+    "connection.user": "devops.ai",
     "connection.password": "${file:/opt/kafka/secrets/pg-credentials.properties:pg_password}",
 
     "auto.create": "false",

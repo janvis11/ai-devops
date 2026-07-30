@@ -1,20 +1,20 @@
 ---
-# k8s/security/networkpolicy/axon-system-netpol.yaml
-# NetworkPolicy for axon-system namespace.
-# axon-agent only accepts ingress from monitoring (Alertmanager webhook calls).
+# k8s/security/networkpolicy/devops-ai-system-netpol.yaml
+# NetworkPolicy for devops-ai-system namespace.
+# devops-ai-agent only accepts ingress from monitoring (Alertmanager webhook calls).
 
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: axon-agent-ingress
-  namespace: axon-system
+  name: devops-ai-agent-ingress
+  namespace: devops-ai-system
   labels:
-    app.kubernetes.io/name: axon-agent
+    app.kubernetes.io/name: devops-ai-agent
     app.kubernetes.io/component: network-policy
 spec:
   podSelector:
     matchLabels:
-      app: axon-agent
+      app: devops-ai-agent
 
   policyTypes:
     - Ingress
@@ -99,12 +99,12 @@ spec:
           port: 443
 
 ---
-# ─── Deny all by default for axon-system ─────────────────────────────────────
+# ─── Deny all by default for devops-ai-system ─────────────────────────────────────
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-all
-  namespace: axon-system
+  namespace: devops-ai-system
 spec:
   podSelector: {}
   policyTypes:

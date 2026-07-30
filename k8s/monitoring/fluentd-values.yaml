@@ -69,7 +69,7 @@ fileConfigs:
       @type loki
       @id out_loki
       url "http://loki-gateway.monitoring.svc.cluster.local:80"
-      extra_labels {"job":"fluentd","cluster":"axon"}
+      extra_labels {"job":"fluentd","cluster":"devops.ai"}
       flush_interval 5s
       <label>
         namespace $.kubernetes.namespace_name

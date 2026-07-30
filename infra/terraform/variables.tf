@@ -5,9 +5,9 @@ variable "region" {
 }
 
 variable "cluster_name" {
-  description = "Name prefix used for all AXON resources"
+  description = "Name prefix used for all devops.ai resources"
   type        = string
-  default     = "axon"
+  default     = "devops.ai"
 }
 
 variable "environment" {
@@ -31,7 +31,7 @@ variable "ami_id" {
 variable "key_name" {
   description = "EC2 key pair name for SSH access"
   type        = string
-  default     = "axon-key"
+  default     = "devops.ai-key"
 }
 
 variable "vpc_id" {
@@ -49,7 +49,7 @@ variable "subnet_id" {
 variable "db_username" {
   description = "PostgreSQL master username"
   type        = string
-  default     = "axon"
+  default     = "devops.ai"
   sensitive   = true
 }
 

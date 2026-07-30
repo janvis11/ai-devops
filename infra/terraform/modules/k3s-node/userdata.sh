@@ -6,7 +6,7 @@ set -euo pipefail
 K3S_VERSION="${k3s_version}"
 CLUSTER_NAME="${cluster_name}"
 
-echo ">>> AXON k3s bootstrap — version: $K3S_VERSION  cluster: $CLUSTER_NAME"
+echo ">>> devops.ai k3s bootstrap — version: $K3S_VERSION  cluster: $CLUSTER_NAME"
 
 # ── system packages ──────────────────────────────────────────────────────────
 export DEBIAN_FRONTEND=noninteractive
@@ -35,7 +35,7 @@ echo ">>> k3s ready!"
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 # ── core namespaces ───────────────────────────────────────────────────────────
-KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl create namespace axon-system  || true
+KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl create namespace devops-ai-system  || true
 KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl create namespace monitoring   || true
 KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl create namespace apps         || true
 KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl create namespace gitops       || true

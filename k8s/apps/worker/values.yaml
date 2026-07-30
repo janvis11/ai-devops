@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/janvis11/axon-worker
+  repository: ghcr.io/janvis11/devops.ai-worker
   pullPolicy: IfNotPresent
   tag: "latest"
 

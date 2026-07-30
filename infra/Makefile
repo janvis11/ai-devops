@@ -1,4 +1,4 @@
-# infra/Makefile — AXON Infrastructure Management
+# infra/Makefile — devops.ai Infrastructure Management
 # Usage: make <target>
 # Run from the infra/ directory or use `make -C infra <target>` from repo root.
 
@@ -16,7 +16,7 @@ TERRAFORM_DIR := $(REPO_ROOT)/infra/terraform
 
 help:
 	@echo ""
-	@echo "AXON Infrastructure Makefile"
+	@echo "devops.ai Infrastructure Makefile"
 	@echo "============================"
 	@echo ""
 	@echo "Bootstrap targets:"
@@ -43,14 +43,14 @@ help:
 	@echo "  opa-apply          Apply OPA ConstraintTemplates and Constraints"
 	@echo ""
 	@echo "Agent targets:"
-	@echo "  agent-up           Deploy AXON agent to k3s"
-	@echo "  agent-down         Remove AXON agent from k3s"
+	@echo "  agent-up           Deploy devops.ai agent to k3s"
+	@echo "  agent-down         Remove devops.ai agent from k3s"
 	@echo ""
 
 
 bootstrap: tf-apply ansible-k3s security-apply opa-apply ansible-secrets
 	@echo ""
-	@echo "✅ AXON platform bootstrap complete!"
+	@echo "✅ devops.ai platform bootstrap complete!"
 	@echo "   Next: make kafka-up && helmfile apply"
 
 
@@ -112,13 +112,13 @@ opa-apply:
 	@echo "Applying OPA ConstraintTemplates (wait for CRD creation)..."
 	kubectl apply -f $(REPO_ROOT)/k8s/security/opa/no-latest-tag-template.yaml
 	kubectl apply -f $(REPO_ROOT)/k8s/security/opa/require-resource-limits-template.yaml
-	kubectl apply -f $(REPO_ROOT)/k8s/security/opa/protect-axon-system-template.yaml
+	kubectl apply -f $(REPO_ROOT)/k8s/security/opa/protect-devops-ai-system-template.yaml
 	@echo "Waiting 10s for CRDs to be registered..."
 	@sleep 10
 	@echo "Applying OPA Constraints..."
 	kubectl apply -f $(REPO_ROOT)/k8s/security/opa/no-latest-tag-constraint.yaml
 	kubectl apply -f $(REPO_ROOT)/k8s/security/opa/require-resource-limits-constraint.yaml
-	kubectl apply -f $(REPO_ROOT)/k8s/security/opa/protect-axon-system-constraint.yaml
+	kubectl apply -f $(REPO_ROOT)/k8s/security/opa/protect-devops-ai-system-constraint.yaml
 	@echo "✅ OPA policies applied"
 
 
@@ -126,8 +126,8 @@ vault-setup:
 	bash $(REPO_ROOT)/k8s/security/vault-auth-setup.sh
 
 agent-up:
-	kubectl apply -f $(REPO_ROOT)/k8s/axon-system/
-	@echo "✅ AXON agent deployed"
+	kubectl apply -f $(REPO_ROOT)/k8s/devops-ai-system/
+	@echo "✅ devops.ai agent deployed"
 
 agent-down:
-	kubectl delete -f $(REPO_ROOT)/k8s/axon-system/ || true
+	kubectl delete -f $(REPO_ROOT)/k8s/devops-ai-system/ || true

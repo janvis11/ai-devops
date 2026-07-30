@@ -2,7 +2,7 @@
 # infra/ansible/playbooks/install-k3s.yml
 # Installs k3s on all nodes in the k3s_nodes inventory group.
 # Disables traefik and servicelb (we use our own ingress + metallb).
-# Fetches kubeconfig to ~/.kube/axon-config on the Ansible control node.
+# Fetches kubeconfig to ~/.kube/devops_ai-config on the Ansible control node.
 
 - name: Install k3s on cluster nodes
   hosts: k3s_nodes
@@ -11,7 +11,7 @@
 
   vars:
     k3s_install_script: "https://get.k3s.io"
-    kubeconfig_dest: "~/.kube/axon-config"
+    kubeconfig_dest: "~/.kube/devops_ai-config"
 
   pre_tasks:
     - name: Ensure required packages are present
@@ -92,7 +92,7 @@
         kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml create namespace {{ item }} --dry-run=client -o yaml | \
           kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml apply -f -
       loop:
-        - axon-system
+        - devops-ai-system
         - monitoring
         - apps
         - gitops

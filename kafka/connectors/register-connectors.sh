@@ -10,7 +10,7 @@ CONNECTORS_DIR="$(dirname "$0")"
 TIMEOUT=120
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo " AXON — Kafka Connect Provisioner"
+echo " devops.ai — Kafka Connect Provisioner"
 echo " Connect REST: $CONNECT_URL"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 

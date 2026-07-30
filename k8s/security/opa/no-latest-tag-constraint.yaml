@@ -21,7 +21,7 @@ spec:
           - ReplicaSet
     namespaces:
       - apps
-      - axon-system
+      - devops-ai-system
       - monitoring
       - backstage
 

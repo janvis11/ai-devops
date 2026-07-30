@@ -15,10 +15,10 @@ data:
   kafka-health.json: |
     {
       "id": null,
-      "uid": "axon-kafka-health",
-      "title": "AXON — Kafka Health",
+      "uid": "devops.ai-kafka-health",
+      "title": "devops.ai — Kafka Health",
       "description": "Topic message rates, consumer lag, broker health, retention usage",
-      "tags": ["axon", "kafka", "streaming"],
+      "tags": ["devops.ai", "kafka", "streaming"],
       "timezone": "browser",
       "schemaVersion": 38,
       "version": 1,

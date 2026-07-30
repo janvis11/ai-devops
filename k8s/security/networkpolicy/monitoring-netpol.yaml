@@ -22,11 +22,11 @@ spec:
     - from:
         - podSelector: {}
 
-    # Allow from axon-system (agent reads Prometheus metrics)
+    # Allow from devops-ai-system (agent reads Prometheus metrics)
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: axon-system
+              kubernetes.io/metadata.name: devops-ai-system
       ports:
         - protocol: TCP
           port: 9090   # Prometheus
@@ -72,21 +72,21 @@ spec:
         - protocol: TCP
           port: 443
 
-    # Allow to axon-system webhook receiver
+    # Allow to devops-ai-system webhook receiver
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: axon-system
+              kubernetes.io/metadata.name: devops-ai-system
       ports:
         - protocol: TCP
           port: 8000
 
 ---
-# ─── Apps namespace — no egress to axon-system ───────────────────────────────
+# ─── Apps namespace — no egress to devops-ai-system ───────────────────────────────
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: apps-deny-axon-system-egress
+  name: apps-deny-devops-ai-system-egress
   namespace: apps
   labels:
     app.kubernetes.io/component: network-policy
@@ -97,14 +97,14 @@ spec:
     - Egress
 
   egress:
-    # Allow everything EXCEPT axon-system
+    # Allow everything EXCEPT devops-ai-system
     - to:
         - namespaceSelector:
             matchExpressions:
               - key: kubernetes.io/metadata.name
                 operator: NotIn
                 values:
-                  - axon-system
+                  - devops-ai-system
       ports:
         - protocol: TCP
           port: 5432   # PostgreSQL

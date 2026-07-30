@@ -14,7 +14,7 @@ data:
   otel-collector-config.yaml: |
     # ── Receivers ─────────────────────────────────────────────────────────────
     receivers:
-      # Accept OTLP over gRPC (from axon-api, axon-worker, axon-agent)
+      # Accept OTLP over gRPC (from devops-ai-api, devops-ai-worker, devops-ai-agent)
       otlp:
         protocols:
           grpc:
@@ -42,7 +42,7 @@ data:
       resource:
         attributes:
           - key: cluster
-            value: axon-local
+            value: devops-ai-local
             action: insert
           - key: environment
             value: dev

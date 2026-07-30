@@ -1,5 +1,5 @@
 -- kafka/init-db.sql
--- Initializes PostgreSQL schema for AXON platform.
+-- Initializes PostgreSQL schema for devops.ai platform.
 -- Runs automatically on first container start via docker-entrypoint-initdb.d/
 
 -- ── Agent audit table (populated by Kafka Connect JDBC sink) ─────────────────

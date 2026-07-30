@@ -53,7 +53,7 @@ resource "aws_db_instance" "postgresql" {
   allocated_storage = 20
   storage_encrypted = true
 
-  db_name  = "axon"
+  db_name  = "devops.ai"
   username = var.db_username
   password = var.db_password
 
@@ -95,5 +95,5 @@ output "endpoint" {
 
 output "db_name" {
   description = "Database name"
-  value       = "axon"
+  value       = "devops.ai"
 }

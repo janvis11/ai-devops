@@ -5,12 +5,12 @@
 backstage:
   image:
     registry: ghcr.io
-    repository: janvis11/axon/backstage
+    repository: janvis11/devops.ai/backstage
     tag: latest
 
   appConfig:
     app:
-      title: AXON Developer Portal
+      title: devops.ai Developer Portal
       baseUrl: http://localhost:7007
 
     backend:
@@ -23,11 +23,11 @@ backstage:
         - allow: [Component, System, API, Resource, Location, Template]
       locations:
         - type: url
-          target: https://github.com/janvis11/axon/blob/main/services/api/catalog-info.yaml
+          target: https://github.com/janvis11/devops.ai/blob/main/services/api/catalog-info.yaml
         - type: url
-          target: https://github.com/janvis11/axon/blob/main/services/worker/catalog-info.yaml
+          target: https://github.com/janvis11/devops.ai/blob/main/services/worker/catalog-info.yaml
         - type: url
-          target: https://github.com/janvis11/axon/blob/main/services/frontend/catalog-info.yaml
+          target: https://github.com/janvis11/devops.ai/blob/main/services/frontend/catalog-info.yaml
 
 service:
   type: NodePort

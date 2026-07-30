@@ -17,8 +17,8 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "axon-tfstate"
-    key    = "axon/terraform.tfstate"
+    bucket = "devops.ai-tfstate"
+    key    = "devops.ai/terraform.tfstate"
     region = "ap-south-1"
   }
 }

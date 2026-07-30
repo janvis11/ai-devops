@@ -1,7 +1,7 @@
 ---
-# k8s/security/opa/protect-axon-system-template.yaml
+# k8s/security/opa/protect-devops-ai-system-template.yaml
 # OPA Gatekeeper ConstraintTemplate — prevents non-cluster-admins
-# from deploying anything into the axon-system namespace.
+# from deploying anything into the devops-ai-system namespace.
 
 apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
@@ -11,7 +11,7 @@ metadata:
     description: >
       Protects specified namespaces from deployments by non-cluster-admin users.
       Only users in the system:masters group can create/modify resources in protected namespaces.
-    owner: axon-platform
+    owner: devops.ai-platform
 spec:
   crd:
     spec:

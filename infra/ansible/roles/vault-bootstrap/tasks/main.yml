@@ -50,33 +50,33 @@
       kubernetes_host: "https://kubernetes.default.svc"
     status_code: [200, 204]
 
-- name: Write axon-agent Vault policy
+- name: Write devops-ai-agent Vault policy
   ansible.builtin.uri:
-    url: "{{ vault_url }}/v1/sys/policies/acl/axon-agent"
+    url: "{{ vault_url }}/v1/sys/policies/acl/devops-ai-agent"
     method: PUT
     headers:
       X-Vault-Token: "{{ vault_token }}"
     body_format: json
     body:
       policy: |
-        path "secret/data/axon/*" {
+        path "secret/data/devops_ai/*" {
           capabilities = ["read"]
         }
-        path "secret/metadata/axon/*" {
+        path "secret/metadata/devops_ai/*" {
           capabilities = ["list"]
         }
     status_code: [200, 204]
 
-- name: Create axon-agent K8s auth role
+- name: Create devops-ai-agent K8s auth role
   ansible.builtin.uri:
-    url: "{{ vault_url }}/v1/auth/kubernetes/role/axon-agent"
+    url: "{{ vault_url }}/v1/auth/kubernetes/role/devops-ai-agent"
     method: POST
     headers:
       X-Vault-Token: "{{ vault_token }}"
     body_format: json
     body:
-      bound_service_account_names: ["axon-agent"]
-      bound_service_account_namespaces: ["axon-system"]
-      policies: ["axon-agent"]
+      bound_service_account_names: ["devops-ai-agent"]
+      bound_service_account_namespaces: ["devops-ai-system"]
+      policies: ["devops-ai-agent"]
       ttl: "1h"
     status_code: [200, 204]

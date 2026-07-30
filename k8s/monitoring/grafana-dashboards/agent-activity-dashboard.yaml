@@ -1,6 +1,6 @@
 ---
 # k8s/monitoring/grafana-dashboards/agent-activity-dashboard.yaml
-# Grafana Dashboard ConfigMap — AXON Agent Activity
+# Grafana Dashboard ConfigMap — devops.ai Agent Activity
 # Shows agent action timeline, LLM latency, success rate, Kafka consumer lag.
 
 apiVersion: v1
@@ -15,10 +15,10 @@ data:
   agent-activity.json: |
     {
       "id": null,
-      "uid": "axon-agent-activity",
-      "title": "AXON — Agent Activity",
+      "uid": "devops-ai-agent-activity",
+      "title": "devops.ai — Agent Activity",
       "description": "LangGraph agent action timeline, LLM latency, success rate, Kafka lag",
-      "tags": ["axon", "agent", "langgraph", "remediation"],
+      "tags": ["devops.ai", "agent", "langgraph", "remediation"],
       "timezone": "browser",
       "schemaVersion": 38,
       "version": 1,
@@ -32,7 +32,7 @@ data:
           "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
           "targets": [
             {
-              "expr": "sum(increase(axon_agent_actions_total[24h]))",
+              "expr": "sum(increase(devops_ai_agent_actions_total[24h]))",
               "legendFormat": "Actions"
             }
           ],
@@ -45,7 +45,7 @@ data:
           "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
           "targets": [
             {
-              "expr": "sum(rate(axon_agent_actions_total{outcome=\"success\"}[1h])) / sum(rate(axon_agent_actions_total[1h])) * 100",
+              "expr": "sum(rate(devops_ai_agent_actions_total{outcome=\"success\"}[1h])) / sum(rate(devops_ai_agent_actions_total[1h])) * 100",
               "legendFormat": "Success %"
             }
           ],
@@ -64,7 +64,7 @@ data:
           "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
           "targets": [
             {
-              "expr": "axon_agent_pending_actions",
+              "expr": "devops_ai_agent_pending_actions",
               "legendFormat": "Pending"
             }
           ],
@@ -83,7 +83,7 @@ data:
           "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
           "targets": [
             {
-              "expr": "axon_agent_hitl_pending or vector(0)",
+              "expr": "devops_ai_agent_hitl_pending or vector(0)",
               "legendFormat": "Waiting"
             }
           ],
@@ -102,7 +102,7 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
           "targets": [
             {
-              "expr": "sum by (action_type) (increase(axon_agent_actions_total[1h]))",
+              "expr": "sum by (action_type) (increase(devops_ai_agent_actions_total[1h]))",
               "legendFormat": "{{ action_type }}"
             }
           ],
@@ -115,15 +115,15 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
           "targets": [
             {
-              "expr": "histogram_quantile(0.50, rate(axon_llm_request_duration_seconds_bucket[5m]))",
+              "expr": "histogram_quantile(0.50, rate(devops_ai_llm_request_duration_seconds_bucket[5m]))",
               "legendFormat": "P50"
             },
             {
-              "expr": "histogram_quantile(0.95, rate(axon_llm_request_duration_seconds_bucket[5m]))",
+              "expr": "histogram_quantile(0.95, rate(devops_ai_llm_request_duration_seconds_bucket[5m]))",
               "legendFormat": "P95"
             },
             {
-              "expr": "histogram_quantile(0.99, rate(axon_llm_request_duration_seconds_bucket[5m]))",
+              "expr": "histogram_quantile(0.99, rate(devops_ai_llm_request_duration_seconds_bucket[5m]))",
               "legendFormat": "P99"
             }
           ],
@@ -136,7 +136,7 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
           "targets": [
             {
-              "expr": "kafka_consumergroup_lag{topic=\"infra.alerts\", consumergroup=\"axon-alert-consumer\"}",
+              "expr": "kafka_consumergroup_lag{topic=\"infra.alerts\", consumergroup=\"devops-ai-alert-consumer\"}",
               "legendFormat": "partition {{ partition }}"
             }
           ],
@@ -156,7 +156,7 @@ data:
           "description": "Recent agent actions from PostgreSQL via Loki logs",
           "targets": [
             {
-              "expr": "sum by (action_type, outcome) (increase(axon_agent_actions_total[6h]))",
+              "expr": "sum by (action_type, outcome) (increase(devops_ai_agent_actions_total[6h]))",
               "format": "table",
               "instant": true
             }

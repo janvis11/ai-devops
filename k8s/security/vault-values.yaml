@@ -68,15 +68,15 @@ server:
     port: 8200
     targetPort: 8200
 
-  # Annotations for the axon-agent sidecar injection
+  # Annotations for the devops-ai-agent sidecar injection
   # (these go on the workload pod, not the Vault pod)
   # Kept here as reference — see security.md for usage
   #
   # vault.hashicorp.com/agent-inject: "true"
-  # vault.hashicorp.com/role: "axon-agent"
-  # vault.hashicorp.com/agent-inject-secret-config: "secret/data/axon/config"
+  # vault.hashicorp.com/role: "devops-ai-agent"
+  # vault.hashicorp.com/agent-inject-secret-config: "secret/data/devops_ai/config"
   # vault.hashicorp.com/agent-inject-template-config: |
-  #   {{- with secret "secret/data/axon/config" -}}
+  #   {{- with secret "secret/data/devops_ai/config" -}}
   #   CLAUDE_API_KEY={{ .Data.data.claude_api_key }}
   #   KAFKA_PASSWORD={{ .Data.data.kafka_password }}
   #   PG_PASSWORD={{ .Data.data.pg_password }}

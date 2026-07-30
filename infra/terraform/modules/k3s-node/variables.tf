@@ -17,7 +17,7 @@ variable "k3s_version" {
 variable "cluster_name" {
   description = "Cluster name prefix for resource tags"
   type        = string
-  default     = "axon"
+  default     = "devops.ai"
 }
 
 variable "vpc_id" {

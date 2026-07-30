@@ -24,7 +24,7 @@ appVersion: "1.0.0"
         f.write(f"""replicaCount: 1
 
 image:
-  repository: ghcr.io/janvis11/axon-{app}
+  repository: ghcr.io/janvis11/devops.ai-{app}
   pullPolicy: IfNotPresent
   tag: "latest"
 

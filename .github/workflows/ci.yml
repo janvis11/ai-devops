@@ -16,13 +16,13 @@ jobs:
 
       - name: Build image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}/axon-${{ matrix.service }}:${{ github.sha }} \
+          docker build -t ghcr.io/${{ github.repository }}/devops_ai-${{ matrix.service }}:${{ github.sha }} \
             services/${{ matrix.service }}
 
       - name: Trivy scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ghcr.io/${{ github.repository }}/axon-${{ matrix.service }}:${{ github.sha }}
+          image-ref: ghcr.io/${{ github.repository }}/devops_ai-${{ matrix.service }}:${{ github.sha }}
           exit-code: '1'
           severity: 'CRITICAL'
 
@@ -35,14 +35,14 @@ jobs:
       - name: Push to GHCR
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker push ghcr.io/${{ github.repository }}/axon-${{ matrix.service }}:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}/devops_ai-${{ matrix.service }}:${{ github.sha }}
 
       - name: Update GitOps image tag
         run: |
           # Bump image tag in k8s/apps/values.yaml
           sed -i "s|tag: .*|tag: ${{ github.sha }}|" k8s/apps/${{ matrix.service }}/values.yaml
-          git config user.email "axon-bot@axon.io"
-          git config user.name "AXON Bot"
+          git config user.email "devops-ai-bot@devops.ai"
+          git config user.name "devops.ai Bot"
           git add k8s/apps/${{ matrix.service }}/values.yaml
           git commit -m "chore: bump ${{ matrix.service }} to ${{ github.sha }}" || echo "No changes to commit"
           git push

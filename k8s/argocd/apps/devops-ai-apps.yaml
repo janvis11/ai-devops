@@ -1,12 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: axon-api
+  name: devops-ai-api
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/janvis11/axon
+    repoURL: https://github.com/janvis11/devops.ai
     targetRevision: main
     path: k8s/apps/api
   destination:
@@ -22,12 +22,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: axon-worker
+  name: devops-ai-worker
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/janvis11/axon
+    repoURL: https://github.com/janvis11/devops.ai
     targetRevision: main
     path: k8s/apps/worker
   destination:
@@ -43,12 +43,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: axon-frontend
+  name: devops-ai-frontend
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/janvis11/axon
+    repoURL: https://github.com/janvis11/devops.ai
     targetRevision: main
     path: k8s/apps/frontend
   destination:

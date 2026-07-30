@@ -1,14 +1,14 @@
 ---
-# k8s/security/opa/protect-axon-system-constraint.yaml
-# Applies the K8sProtectNamespace constraint to axon-system.
-# Only users in system:masters can deploy to axon-system.
+# k8s/security/opa/protect-devops-ai-system-constraint.yaml
+# Applies the K8sProtectNamespace constraint to devops-ai-system.
+# Only users in system:masters can deploy to devops-ai-system.
 
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: K8sProtectNamespace
 metadata:
-  name: protect-axon-system
+  name: protect-devops-ai-system
   annotations:
-    description: Only cluster-admins can deploy to axon-system namespace
+    description: Only cluster-admins can deploy to devops-ai-system namespace
 spec:
   match:
     kinds:
@@ -26,7 +26,7 @@ spec:
 
   parameters:
     protectedNamespaces:
-      - axon-system
+      - devops-ai-system
     allowedGroups:
       - system:masters
       - system:cluster-admins

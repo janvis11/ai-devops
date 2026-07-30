@@ -21,7 +21,7 @@ x-kafka-common: &kafka-common
     start_period: 30s
 
 networks:
-  axon-kafka:
+  devops.ai-kafka:
     driver: bridge
 
 volumes:
@@ -51,7 +51,7 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       # Cluster identity
-      CLUSTER_ID: axon-cluster-v1-kraft
+      CLUSTER_ID: devops-ai-cluster-v1-kraft
       # Replication
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
@@ -71,7 +71,7 @@ services:
     volumes:
       - kafka-1-data:/var/lib/kafka/data
     networks:
-      - axon-kafka
+      - devops.ai-kafka
 
   # ── Broker 2 ─────────────────────────────────────────────────────────────────
   kafka-2:
@@ -88,7 +88,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      CLUSTER_ID: axon-cluster-v1-kraft
+      CLUSTER_ID: devops-ai-cluster-v1-kraft
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
@@ -100,7 +100,7 @@ services:
     volumes:
       - kafka-2-data:/var/lib/kafka/data
     networks:
-      - axon-kafka
+      - devops.ai-kafka
 
   # ── Broker 3 ─────────────────────────────────────────────────────────────────
   kafka-3:
@@ -117,7 +117,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      CLUSTER_ID: axon-cluster-v1-kraft
+      CLUSTER_ID: devops-ai-cluster-v1-kraft
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
@@ -129,7 +129,7 @@ services:
     volumes:
       - kafka-3-data:/var/lib/kafka/data
     networks:
-      - axon-kafka
+      - devops.ai-kafka
 
   # ── kafka-ui ─────────────────────────────────────────────────────────────────
   kafka-ui:
@@ -141,16 +141,16 @@ services:
       kafka-1:
         condition: service_healthy
     environment:
-      KAFKA_CLUSTERS_0_NAME: axon-local
+      KAFKA_CLUSTERS_0_NAME: devops-ai-local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
-      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: axon-connect
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: devops-ai-connect
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect:8083
       DYNAMIC_CONFIG_ENABLED: "true"
       # Auth (optional — remove for open dev)
       AUTH_TYPE: DISABLED
     restart: unless-stopped
     networks:
-      - axon-kafka
+      - devops.ai-kafka
 
   # ── Kafka Connect (with JDBC plugin for PostgreSQL sink) ──────────────────────
   kafka-connect:
@@ -166,10 +166,10 @@ services:
     environment:
       CONNECT_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       CONNECT_REST_PORT: 8083
-      CONNECT_GROUP_ID: axon-connect-group
-      CONNECT_CONFIG_STORAGE_TOPIC: _axon-connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: _axon-connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: _axon-connect-status
+      CONNECT_GROUP_ID: devops-ai-connect-group
+      CONNECT_CONFIG_STORAGE_TOPIC: _devops-ai-connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _devops-ai-connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _devops-ai-connect-status
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
@@ -190,26 +190,26 @@ services:
       "
     restart: unless-stopped
     networks:
-      - axon-kafka
+      - devops.ai-kafka
 
   # ── PostgreSQL (shared with services) ────────────────────────────────────────
   postgresql:
     image: postgres:15-alpine
-    container_name: axon-postgresql
+    container_name: devops.ai-postgresql
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: axon
+      POSTGRES_USER: devops_ai
       POSTGRES_PASSWORD: ${PG_PASSWORD:-password}
-      POSTGRES_DB: axon
+      POSTGRES_DB: devops_ai
     volumes:
       - postgresql-data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U axon -d axon"]
+      test: ["CMD-SHELL", "pg_isready -U devops_ai -d devops_ai"]
       interval: 5s
       timeout: 5s
       retries: 10
     restart: unless-stopped
     networks:
-      - axon-kafka
+      - devops.ai-kafka
