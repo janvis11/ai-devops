@@ -1,0 +1,502 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   devops.ai — Global Design System
+   Reference: docs/design.md (PostHog-inspired, Kubernetes-recolored)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Google Fonts ──────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* ── CSS Variables (§1 Color + §2 Typography) ─────────────────────────────── */
+:root {
+  /* Color tokens */
+  --white: #FFFFFF;
+  --ice: #F1F5FC;
+  --k8s-blue: #326CE5;
+  --k8s-blue-hover: #2558C7;
+  --navy: #0B2559;
+  --navy-70: #3C558C;
+  --navy-40: #8FA0C4;
+  --signal-green: #1F9D67;
+  --signal-amber: #D98A17;
+  --signal-red: #D0402C;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+
+  /* Hard-edge recipe */
+  --border: 2px solid var(--navy);
+  --radius: 10px;
+  --shadow: 4px 4px 0 var(--navy);
+  --shadow-hover: 6px 6px 0 var(--navy);
+  --shadow-pressed: 0 0 0 var(--navy);
+
+  /* Layout */
+  --max-width: 1240px;
+  --nav-height: 64px;
+}
+
+/* ── Reset ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--navy);
+  background: var(--white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--k8s-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--k8s-blue-hover);
+}
+
+/* ── Typography Scale (§2) ────────────────────────────────────────────────── */
+.h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1.05;
+  letter-spacing: -1px;
+  color: var(--navy);
+}
+
+.h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1.15;
+  color: var(--navy);
+}
+
+.h3 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--navy);
+}
+
+.body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.subhead {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--navy-70);
+}
+
+/* ── Hard-Edge Component System (§4) ──────────────────────────────────────── */
+
+/* Hard card — signature PostHog surface */
+.hard-card {
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: var(--white);
+  padding: var(--space-lg);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.hard-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Hard button — mechanical press on :active */
+.hard-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 20px;
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: var(--k8s-blue);
+  color: var(--white);
+  cursor: pointer;
+  transition: transform 100ms, box-shadow 100ms, background 100ms;
+  user-select: none;
+}
+
+.hard-btn:hover {
+  background: var(--k8s-blue-hover);
+}
+
+.hard-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: var(--shadow-pressed);
+}
+
+/* Outline button variant */
+.hard-btn--outline {
+  background: var(--white);
+  color: var(--navy);
+}
+
+.hard-btn--outline:hover {
+  background: var(--ice);
+  color: var(--navy);
+}
+
+/* Danger button variant (chaos.sh) */
+.hard-btn--danger {
+  background: var(--white);
+  color: var(--signal-red);
+  border-color: var(--navy);
+}
+
+.hard-btn--danger:hover {
+  border-color: var(--signal-red);
+  background: rgba(208, 64, 44, 0.08);
+}
+
+.hard-btn--sm {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+/* Status badges (§4 — 2px border, no shadow, 10% tint fill) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 2px solid;
+  white-space: nowrap;
+}
+
+.badge--verified {
+  color: var(--signal-green);
+  border-color: var(--signal-green);
+  background: rgba(31, 157, 103, 0.1);
+}
+
+.badge--escalated {
+  color: var(--signal-amber);
+  border-color: var(--signal-amber);
+  background: rgba(217, 138, 23, 0.1);
+}
+
+.badge--failed {
+  color: var(--signal-red);
+  border-color: var(--signal-red);
+  background: rgba(208, 64, 44, 0.1);
+}
+
+.badge--info {
+  color: var(--k8s-blue);
+  border-color: var(--k8s-blue);
+  background: rgba(50, 108, 229, 0.1);
+}
+
+/* ── Navigation Bar (Enhanced OS Header) ──────────────────────────────────── */
+.nav-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--white);
+  border-top: 3px solid var(--k8s-blue);
+  border-bottom: 2px solid var(--navy);
+  height: var(--nav-height);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  gap: var(--space-md);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  text-decoration: none;
+}
+
+.nav-brand-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--white);
+  border: var(--border);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--navy);
+}
+
+.nav-brand-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--navy);
+  letter-spacing: -0.5px;
+}
+
+.nav-brand-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--ice);
+  border: 1px solid var(--navy-40);
+  color: var(--navy-70);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.nav-right-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.live-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1.5px solid var(--navy);
+  border-radius: 6px;
+  background: var(--ice);
+  box-shadow: 2px 2px 0 var(--navy);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--signal-green);
+  box-shadow: 0 0 6px var(--signal-green);
+}
+
+.live-dot--offline {
+  background: var(--signal-amber);
+  box-shadow: none;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.footer {
+  background: var(--navy);
+  padding: var(--space-xl) 0;
+  margin-top: var(--space-3xl);
+  border-top: 3px solid var(--k8s-blue);
+}
+
+.footer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  justify-content: center;
+}
+
+.footer-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--white);
+  padding: 4px 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.footer-copy {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--navy-40);
+  text-align: center;
+}
+
+/* ── Layout Utilities ─────────────────────────────────────────────────────── */
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.section {
+  padding: var(--space-3xl) 0;
+}
+
+.section--ice {
+  background: var(--ice);
+  border-top: 1px solid rgba(11, 37, 89, 0.08);
+  border-bottom: 1px solid rgba(11, 37, 89, 0.08);
+}
+
+.section--white {
+  background: var(--white);
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--navy-40);
+  margin-bottom: var(--space-lg);
+  text-transform: lowercase;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+
+/* ── Empty State Component ────────────────────────────────────────────────── */
+.empty-state {
+  border: 2px dashed var(--navy-40);
+  border-radius: var(--radius);
+  padding: var(--space-2xl);
+  text-align: center;
+  background: var(--white);
+}
+
+.empty-state-icon {
+  font-size: 32px;
+  margin-bottom: var(--space-xs);
+}
+
+/* ── Feed Card (feed.log) — 200ms slide-in ────────────────────────────────── */
+@keyframes feedSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feed-card-enter {
+  animation: feedSlideIn 200ms ease-out forwards;
+}
+
+/* ── Helm Wheel Rotation (§6) ─────────────────────────────────────────────── */
+@keyframes helmSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.helm-wheel {
+  animation: helmSpin 25s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .helm-wheel {
+    animation: none;
+  }
+  .feed-card-enter {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ── Table (audit.sql) ────────────────────────────────────────────────────── */
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.audit-table thead {
+  background: var(--ice);
+  border-bottom: 2px solid var(--navy);
+}
+
+.audit-table th {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  color: var(--navy-70);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.audit-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--ice);
+  color: var(--navy);
+  vertical-align: middle;
+}
+
+.audit-table tbody tr:hover {
+  background: var(--ice);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .h1 { font-size: 36px; }
+  .h2 { font-size: 24px; }
+  .subhead { font-size: 16px; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .container { padding: 0 var(--space-md); }
+  .section { padding: var(--space-xl) 0; }
+  .nav-right-status { display: none; }
+}
