@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: devops-ai-worker
+  title: Worker Microservice
+  description: Background worker processing workload queues and executing simulated chaos testing spikes.
+  annotations:
+    github.com/project-slug: janvis11/devops.ai
+  tags:
+    - python
+    - background-jobs
+    - chaos-testing
+spec:
+  type: service
+  lifecycle: production
+  owner: backend-team
+  system: devops-ai-platform

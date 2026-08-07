@@ -1,12 +1,13 @@
-# k8s/backstage/values.yaml — Backstage Helm values (placeholder)
+# k8s/backstage/values.yaml
+# Backstage Helm values
 # Chart: backstage/backstage
-# Full configuration will be added in Phase 7.
 
 backstage:
   image:
     registry: ghcr.io
     repository: janvis11/devops.ai/backstage
     tag: latest
+    pullPolicy: IfNotPresent
 
   appConfig:
     app:
@@ -17,17 +18,34 @@ backstage:
       baseUrl: http://localhost:7007
       listen:
         port: 7007
+      database:
+        client: pg
+        connection:
+          host: postgresql.database.svc.cluster.local
+          port: 5432
+          user: devops_ai
+          database: devops_ai
+          password: password
 
     catalog:
       rules:
-        - allow: [Component, System, API, Resource, Location, Template]
+        - allow: [Component, System, API, Resource, Location, Template, Group, User]
       locations:
+        - type: url
+          target: https://github.com/janvis11/devops.ai/blob/main/catalog-info.yaml
         - type: url
           target: https://github.com/janvis11/devops.ai/blob/main/services/api/catalog-info.yaml
         - type: url
           target: https://github.com/janvis11/devops.ai/blob/main/services/worker/catalog-info.yaml
         - type: url
           target: https://github.com/janvis11/devops.ai/blob/main/services/frontend/catalog-info.yaml
+
+    techdocs:
+      builder: 'local'
+      generator:
+        runIn: 'local'
+      publisher:
+        type: 'local'
 
 service:
   type: NodePort

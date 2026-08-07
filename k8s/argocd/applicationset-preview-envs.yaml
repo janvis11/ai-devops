@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: devops-ai-preview-environments
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: devops-ai-preview-environments
+    app.kubernetes.io/component: gitops
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/janvis11/devops.ai.git
+        revision: HEAD
+        directories:
+          - path: k8s/apps/*
+  template:
+    metadata:
+      name: 'preview-{{path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/janvis11/devops.ai.git
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'preview-{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

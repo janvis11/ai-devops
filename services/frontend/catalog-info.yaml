@@ -1,0 +1,18 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: devops-ai-frontend
+  title: Frontend Dashboard
+  description: Next.js 14 real-time dashboard featuring SSE stream, 7-node FSM visualizer, and chaos controls.
+  annotations:
+    github.com/project-slug: janvis11/devops.ai
+  tags:
+    - nextjs
+    - react
+    - sse
+    - dashboard
+spec:
+  type: website
+  lifecycle: production
+  owner: frontend-team
+  system: devops-ai-platform

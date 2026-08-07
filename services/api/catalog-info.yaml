@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: devops-ai-api
+  title: API Microservice
+  description: FastAPI backend service instrumented with Prometheus counters and OpenTelemetry gRPC tracing.
+  annotations:
+    github.com/project-slug: janvis11/devops.ai
+    prometheus.io/rule: http_requests_total
+  tags:
+    - python
+    - fastapi
+    - opentelemetry
+    - prometheus
+spec:
+  type: service
+  lifecycle: production
+  owner: backend-team
+  system: devops-ai-platform

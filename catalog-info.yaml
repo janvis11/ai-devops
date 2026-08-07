@@ -1,0 +1,33 @@
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: devops-ai-platform
+  title: devops.ai Platform
+  description: Autonomous AI-driven Kubernetes remediation and GitOps platform.
+  tags:
+    - kubernetes
+    - ai-agent
+    - gitops
+    - sre
+spec:
+  owner: sre-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: devops-ai-agent
+  title: devops.ai AI Agent Core
+  description: LangGraph FSM engine with Claude 3.5 Sonnet reasoning, K8s Python client mutations, and Slack HITL.
+  annotations:
+    github.com/project-slug: janvis11/devops.ai
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - python
+    - langgraph
+    - fast-api
+    - ai-agent
+spec:
+  type: service
+  lifecycle: production
+  owner: sre-team
+  system: devops-ai-platform
